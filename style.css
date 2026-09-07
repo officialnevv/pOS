@@ -175,24 +175,136 @@ body {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
 }
 
-/* placeholder window content (real modules mount here later) */
-.window-label {
+/* window content area — modules mount their DOM here (Spec §8) */
+.window-content {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------------------------------------------------------------
+   Module-embedded titles (Spec §2/§8): each module renders its own
+   icon + name inside its content; styled to look like part of the
+   window, not a WM control.
+   --------------------------------------------------------------- */
+.module-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--color-accent);
+  border-bottom: 2px solid var(--color-border);
   user-select: none;
 }
 
-.window-tag {
-  padding: 0 12px;
-  font-size: 11px;
+.module-title-icon {
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------------
+   Tasks module
+   --------------------------------------------------------------- */
+.tasks {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tasks-add {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.tasks-add input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  border-radius: 0;
+}
+
+.tasks-add input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.tasks-add button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.tasks-add button:hover {
+  border-color: var(--color-accent);
+}
+
+.tasks-list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+}
+
+.task-item + .task-item {
+  border-top: 1px solid var(--color-border);
+}
+
+.task-item input[type='checkbox'] {
+  accent-color: var(--color-accent);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.task-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-item.done .task-text {
+  text-decoration: line-through;
   color: var(--color-border);
-  user-select: none;
+}
+
+.task-remove {
+  background: none;
+  border: none;
+  color: var(--color-border);
+  font: inherit;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.task-remove:hover {
+  color: var(--color-accent-secondary);
 }
 
 /* ---------------------------------------------------------------
    7–12. Remaining sections (pill, launcher, theme picker, lock
-   screen, module styles) come with later phases.
+   screen) come with later phases.
    --------------------------------------------------------------- */
 

@@ -17,6 +17,9 @@
  *   - Window lifecycle: open/close (Alt+Q), promote to master
  *     (Alt+W), toggle floating (Alt+V, detaches in place), fullscreen
  *     overlay (Alt+F).
+ *   - Generic module mounting: windows look their module up in the
+ *     registry and mount/unmount its DOM (Spec §8); launching is
+ *     singleton-aware across workspaces (Spec §5).
  *   - Keybind handling: Alt+H/J/K/L focus, Alt+Shift+H/L ratio
  *     resize, Alt+1..9 workspaces, all with preventDefault (Spec §10).
  *     (Alt+Enter reserved for the launcher, TODO.)
@@ -29,9 +32,8 @@
  *   - Module launcher (Alt+Enter) + theme picker popups.
  *   - Workspace indicator pill (Spec §3) — Alt+1..9 works already.
  *   - Dwindle layout engine + per-workspace layout toggle.
- *   - Windows currently render placeholder labels; real module
- *     mounting via modules.js comes next.
- *   - Persistence of window/workspace state.
+ *   - Persistence of window/workspace state (module data persistence
+ *     via persistence.js is already live).
  */
 
 // Side-effect imports: modules register themselves with the registry.
@@ -40,9 +42,12 @@ import './persistence.js';
 import './modules.js';
 import './modules/tasks.js';
 
-// Registry/theme/persistence APIs used during init (real usage TBD).
+// Registry/theme/persistence APIs. The WM is a generic shell: it only
+// ever talks to the module *registry*, never to specific modules
+// (Spec §8).
 import { DEFAULT_THEME_ID, applyTheme } from './themes.js';
-import { loadState } from './persistence.js';
+import { loadState, getModuleData, setModuleData } from './persistence.js';
+import { getAllModules, getModule } from './modules.js';
 
 /* ---------------------------------------------------------------
    Top bar clock (Spec §2) — live date (center) + time (right).
@@ -103,11 +108,11 @@ const tiledWindows = (ws) => ws.windows.filter((w) => w.state === 'tiled');
 
 /* ---------- window lifecycle ---------- */
 
-function openWindow(label) {
+function openWindow(moduleId) {
   const ws = currentWorkspace();
   const win = {
     id: nextWindowId++,
-    label,
+    moduleId,
     state: 'tiled',
     floatingGeometry: null,
     isFullscreen: false,
@@ -122,12 +127,29 @@ function openWindow(label) {
   return win;
 }
 
+/** Singleton-aware launch (Spec §5/§7): if the module is already open
+ * anywhere, switch to that workspace and focus it — never duplicate. */
+function launchModule(moduleId) {
+  for (let i = 0; i < state.workspaces.length; i++) {
+    const win = state.workspaces[i].windows.find((w) => w.moduleId === moduleId);
+    if (win) {
+      if (i !== state.activeWorkspace) switchWorkspace(i);
+      focusedWindowId = win.id;
+      render();
+      return win;
+    }
+  }
+  return openWindow(moduleId);
+}
+
 function closeWindow(id) {
   if (id == null) return;
   const ws = currentWorkspace();
   const idx = ws.windows.findIndex((w) => w.id === id);
   if (idx === -1) return;
+  const win = ws.windows[idx];
   ws.windows.splice(idx, 1);
+  unmountWindow(win); // give the module a chance to tear down (Spec §8)
   // focus the window that took its place, if any
   focusedWindowId = ws.windows.length
     ? ws.windows[Math.min(idx, ws.windows.length - 1)].id
@@ -222,17 +244,73 @@ function switchWorkspace(n) {
   render();
 }
 
-/* ---------- rendering ---------- */
+/* ---------- rendering ----------
+   Window elements are cached per window id and reused across renders:
+   modules mount their DOM once, and layout changes only move/resize
+   the existing element (re-appending preserves listeners), so module
+   content is never remounted or reset by WM reflows. */
+
+const windowEls = new Map(); // win.id -> { el, content }
+
+/** Services the WM hands to every module mount (Spec §8/§9). */
+function createContext(moduleId) {
+  return {
+    load: () => getModuleData(moduleId),
+    persist: (data) => setModuleData(moduleId, data),
+  };
+}
+
+function createWindowEl(win) {
+  const el = document.createElement('div');
+  el.className = 'window';
+  el.dataset.windowId = String(win.id);
+
+  const content = document.createElement('div');
+  content.className = 'window-content';
+  el.appendChild(content);
+
+  // generic mount — the WM knows nothing about this module (Spec §8)
+  const mod = getModule(win.moduleId);
+  if (mod?.mount) {
+    mod.mount(content, createContext(win.moduleId));
+  } else {
+    content.textContent = `unknown module: ${win.moduleId}`;
+  }
+
+  const entry = { el, content };
+  windowEls.set(win.id, entry);
+  return entry;
+}
+
+/** Unmount a module's DOM when its window closes (Spec §8). */
+function unmountWindow(win) {
+  const entry = windowEls.get(win.id);
+  if (!entry) return;
+  getModule(win.moduleId)?.unmount?.(entry.content);
+  windowEls.delete(win.id);
+}
 
 function render() {
   const ws = currentWorkspace();
+
+  // drop cached elements for windows that no longer exist anywhere
+  const liveIds = new Set(
+    state.workspaces.flatMap((w) => w.windows.map((x) => x.id))
+  );
+  for (const [id, entry] of windowEls) {
+    if (!liveIds.has(id)) {
+      entry.el.remove?.();
+      windowEls.delete(id);
+    }
+  }
+
   workspaceRoot.innerHTML = '';
 
   if (!ws.windows.length) {
     const hint = document.createElement('div');
     hint.id = 'empty-workspace-hint';
     // TEMP text; becomes "Alt+Enter to launch a module" with the launcher
-    hint.textContent = 'empty workspace — Alt+N opens a test window';
+    hint.textContent = 'empty workspace — Alt+N opens a module';
     workspaceRoot.appendChild(hint);
     return;
   }
@@ -264,9 +342,8 @@ function render() {
   }
 
   for (const win of ws.windows) {
-    const el = document.createElement('div');
-    el.className = 'window';
-    el.dataset.windowId = String(win.id);
+    const entry = windowEls.get(win.id) ?? createWindowEl(win);
+    const el = entry.el;
 
     if (win.isFullscreen) {
       el.classList.add('fullscreen');
@@ -282,14 +359,7 @@ function render() {
 
     if (win.id === focusedWindowId) el.classList.add('focused');
 
-    const label = document.createElement('div');
-    label.className = 'window-label';
-    label.textContent = win.label;
-    const tag = document.createElement('div');
-    tag.className = 'window-tag';
-    tag.textContent = win.isFullscreen ? 'fullscreen' : win.state;
-    el.append(label, tag);
-    workspaceRoot.appendChild(el);
+    workspaceRoot.appendChild(el); // re-attach the cached element
   }
 }
 
@@ -321,8 +391,11 @@ function bindKeybinds() {
     else if (key === 'v' && !e.shiftKey) toggleFloating(focusedWindowId);
     else if (key === 'f' && !e.shiftKey) toggleFullscreen(focusedWindowId);
     else if (key === 'q' && !e.shiftKey) closeWindow(focusedWindowId);
-    // TEMP: test spawner until the module launcher exists
-    else if (key === 'n' && !e.shiftKey) openWindow(`Window ${nextWindowId}`);
+    // TEMP: launches the first registered module until the launcher exists
+    else if (key === 'n' && !e.shiftKey) {
+      const first = getAllModules()[0];
+      if (first) launchModule(first.id);
+    }
     else if (key === 'enter') { /* module launcher — TODO */ }
     else if (/^[1-9]$/.test(key) && !e.shiftKey) switchWorkspace(Number(key) - 1);
     else handled = false;
@@ -473,11 +546,10 @@ function init() {
   bindMouse();
   window.addEventListener('resize', render);
 
-  // TEMP: dummy windows for testing the WM; replaced by the launcher
-  // + real module mounting next.
-  openWindow('Window 1');
-  openWindow('Window 2');
-  openWindow('Window 3');
+  // TEMP seeding until the launcher exists: open the first registered
+  // module (registry order — currently Tasks) so boot isn't empty.
+  const firstModule = getAllModules()[0];
+  if (firstModule) openWindow(firstModule.id);
 }
 
 if (document.readyState === 'loading') {
