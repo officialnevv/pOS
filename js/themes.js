@@ -21,7 +21,13 @@
 export const DEFAULT_THEME_ID = 'everforest';
 
 /**
- * Append-only theme registry. Everforest dark (canonical palette).
+ * Append-only theme registry (Spec §6) — structured like the module
+ * registry: adding a theme = appending one entry here, no other file
+ * changes. Each theme defines the 5 core colors:
+ *   bg (background), fg (text), accent, border (focus-highlight),
+ *   accentSecondary.
+ * All values are the canonical, well-documented palette colors for
+ * each scheme.
  */
 export const THEMES = [
   {
@@ -31,8 +37,118 @@ export const THEMES = [
       bg: '#2d353b',
       fg: '#d3c6aa',
       accent: '#a7c080',
-      border: '#475258',
+      border: '#4b5559',
       accentSecondary: '#e69875',
+    },
+  },
+  {
+    id: 'gruvbox',
+    name: 'Gruvbox',
+    colors: {
+      bg: '#282828',
+      fg: '#ebdbb2',
+      accent: '#fabd2f',
+      border: '#504945',
+      accentSecondary: '#fe8019',
+    },
+  },
+  {
+    id: 'nord',
+    name: 'Nord',
+    colors: {
+      bg: '#2e3440',
+      fg: '#d8dee9',
+      accent: '#88c0d0',
+      border: '#434c5e',
+      accentSecondary: '#81a1c1',
+    },
+  },
+  {
+    id: 'dracula',
+    name: 'Dracula',
+    colors: {
+      bg: '#282a36',
+      fg: '#f8f8f2',
+      accent: '#bd93f9',
+      border: '#44475a',
+      accentSecondary: '#ff79c6',
+    },
+  },
+  {
+    id: 'catppuccin-mocha',
+    name: 'Catppuccin Mocha',
+    colors: {
+      bg: '#1e1e2e',
+      fg: '#cdd6f4',
+      accent: '#cba6f7',
+      border: '#45475a',
+      accentSecondary: '#f5c2e7',
+    },
+  },
+  {
+    id: 'solarized-dark',
+    name: 'Solarized Dark',
+    colors: {
+      bg: '#002b36',
+      fg: '#93a1a1',
+      accent: '#2aa198',
+      border: '#073642',
+      accentSecondary: '#b58900',
+    },
+  },
+  {
+    id: 'solarized-light',
+    name: 'Solarized Light',
+    colors: {
+      bg: '#fdf6e3',
+      fg: '#657b83',
+      accent: '#268bd2',
+      border: '#eee8d5',
+      accentSecondary: '#cb4b16',
+    },
+  },
+  {
+    id: 'tokyo-night',
+    name: 'Tokyo Night',
+    colors: {
+      bg: '#1a1b26',
+      fg: '#a9b1d6',
+      accent: '#7aa2f7',
+      border: '#292e42',
+      accentSecondary: '#bb9af7',
+    },
+  },
+  {
+    id: 'one-dark',
+    name: 'One Dark',
+    colors: {
+      bg: '#282c34',
+      fg: '#abb2bf',
+      accent: '#61afef',
+      border: '#3e4451',
+      accentSecondary: '#98c379',
+    },
+  },
+  {
+    id: 'rose-pine',
+    name: 'Rosé Pine',
+    colors: {
+      bg: '#191724',
+      fg: '#e0def4',
+      accent: '#ebbcba',
+      border: '#26233a',
+      accentSecondary: '#c4a7e7',
+    },
+  },
+  {
+    id: 'monokai',
+    name: 'Monokai',
+    colors: {
+      bg: '#272822',
+      fg: '#f8f8f2',
+      accent: '#a6e22e',
+      border: '#49483e',
+      accentSecondary: '#fd971f',
     },
   },
 ];

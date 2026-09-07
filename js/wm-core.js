@@ -34,7 +34,6 @@
  * Still TODO in later phases:
  *   - Persistence of window/workspace state (module data persistence
  *     via persistence.js is already live).
- *   - Lock screen overlay (Spec §12).
  */
 
 // Side-effect imports: modules register themselves with the registry.
@@ -49,6 +48,7 @@ import './modules/tasks.js';
 import { DEFAULT_THEME_ID, applyTheme, getAllThemes } from './themes.js';
 import { loadState, getModuleData, setModuleData } from './persistence.js';
 import { getAllModules, getModule } from './modules.js';
+import { initLockScreen } from './lockscreen.js';
 
 /* ---------------------------------------------------------------
    Top bar clock (Spec §2) — live date (center) + time (right).
@@ -844,9 +844,11 @@ function openThemePicker() {
   const list = document.createElement('ul');
   list.className = 'theme-list';
 
+  const currentThemeId = document.documentElement.dataset.theme;
+
   for (const theme of getAllThemes()) {
     const item = document.createElement('li');
-    item.className = 'theme-item';
+    item.className = 'theme-item' + (theme.id === currentThemeId ? ' current' : '');
 
     const swatches = document.createElement('span');
     swatches.className = 'theme-swatches';
@@ -898,6 +900,7 @@ function init() {
   bindKeybinds();
   bindMouse();
   window.addEventListener('resize', render);
+  initLockScreen(); // lock on every page load (Spec §12)
 
   render(); // initial paint: empty-workspace hint + pill
 }

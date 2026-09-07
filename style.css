@@ -72,7 +72,7 @@
   --color-bg: #2d353b;             /* background           */
   --color-fg: #d3c6aa;             /* foreground / text    */
   --color-accent: #a7c080;         /* accent (green)       */
-  --color-border: #475258;         /* border / chrome      */
+  --color-border: #4b5559;         /* border / chrome      */
   --color-accent-secondary: #e69875; /* secondary (orange) */
 }
 
@@ -485,7 +485,77 @@ body {
   color: var(--color-fg);
 }
 
+.theme-item.current .theme-name {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
 /* ---------------------------------------------------------------
-   11–12. Remaining sections (lock screen) come with later phases.
+   11. Lock screen (Spec §12): full-screen theme-aware overlay,
+   non-editable "Personal OS" label, PIN input, shake on wrong PIN.
+   --------------------------------------------------------------- */
+#lock-screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--color-bg); /* solid, theme-aware */
+  z-index: 5000; /* above every window and popup */
+}
+
+.lock-box {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lock-title {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  text-align: center;
+  color: var(--color-accent);
+  user-select: none;
+}
+
+.lock-input {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 8px 12px;
+  text-align: center;
+  letter-spacing: 0.3em;
+  border-radius: 0;
+}
+
+.lock-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.lock-error {
+  min-height: 14px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--color-accent-secondary);
+}
+
+@keyframes lock-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+.lock-box.shake {
+  animation: lock-shake 0.3s;
+}
+
+/* ---------------------------------------------------------------
+   12. Remaining sections (none) — roadmap complete except WM-state
+   persistence (Spec §9), which lands with a later phase.
    --------------------------------------------------------------- */
 
