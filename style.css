@@ -126,7 +126,73 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   5–12. Remaining sections are implemented with the window
-   manager phase (see roadmap in the header comment).
+   5. Workspace root + empty-state hint (Spec §3)
+   --------------------------------------------------------------- */
+#workspace-root {
+  position: fixed;
+  top: 36px; /* below the top bar */
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+#empty-workspace-hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-border);
+  letter-spacing: 0.08em;
+  user-select: none;
+}
+
+/* ---------------------------------------------------------------
+   6. Windows (Spec §2): 2px solid border, no chrome, sharp corners.
+   Geometry (left/top/width/height) is set inline by wm-core.js.
+   --------------------------------------------------------------- */
+.window {
+  position: absolute;
+  border: 2px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  overflow: hidden;
+}
+
+.window.focused {
+  border-color: var(--color-accent);
+}
+
+.window.floating {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+.window.floating.focused {
+  z-index: 10;
+}
+
+.window.fullscreen {
+  z-index: 500; /* overlay above everything else in the workspace */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+/* placeholder window content (real modules mount here later) */
+.window-label {
+  padding: 8px 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-accent);
+  user-select: none;
+}
+
+.window-tag {
+  padding: 0 12px;
+  font-size: 11px;
+  color: var(--color-border);
+  user-select: none;
+}
+
+/* ---------------------------------------------------------------
+   7–12. Remaining sections (pill, launcher, theme picker, lock
+   screen, module styles) come with later phases.
    --------------------------------------------------------------- */
 
