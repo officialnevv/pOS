@@ -9,9 +9,10 @@
  * Individual modules are pulled in as side-effect imports below so they
  * register themselves at load time.
  *
- * Implemented (this phase, with placeholder windows):
+ * Implemented:
  *   - Workspace state: 9 workspaces, each with its own windows,
- *     layoutMode + masterRatio (dwindle engine itself is still TODO).
+ *     layoutMode (master-stack / dwindle), masterRatio + dwindle BSP
+ *     tree; Alt+1..9 switching; workspace indicator pill (Spec §3).
  *   - Master-stack tiling (55/45 default, live-adjustable), new
  *     windows spawn as master (Spec §4).
  *   - Window lifecycle: open/close (Alt+Q), promote to master
@@ -20,20 +21,20 @@
  *   - Generic module mounting: windows look their module up in the
  *     registry and mount/unmount its DOM (Spec §8); launching is
  *     singleton-aware across workspaces (Spec §5).
- *   - Keybind handling: Alt+H/J/K/L focus, Alt+Shift+H/L ratio
- *     resize, Alt+1..9 workspaces, all with preventDefault (Spec §10).
- *     (Alt+Enter reserved for the launcher, TODO.)
+ *   - Module launcher (Alt+Enter, fuzzy filter, Spec §7) and theme
+ *     picker popup (Spec §6) as centered popups.
+ *   - Keybind handling: Alt+H/J/K/L focus, Alt+Shift+H/J/K/L resize,
+ *     Alt+1..9 workspaces, Alt+Enter launcher — all with
+ *     preventDefault (Spec §10).
  *   - Mouse behavior: focus-follows-hover, Alt+LeftClick drag
  *     (move/swap), Alt+RightClick drag (resize/ratio, with
  *     contextmenu suppressed) (Spec §11).
  *   - Shell chrome: live top-bar clock/date, empty-workspace hint.
  *
  * Still TODO in later phases:
- *   - Module launcher (Alt+Enter) + theme picker popups.
- *   - Workspace indicator pill (Spec §3) — Alt+1..9 works already.
- *   - Dwindle layout engine + per-workspace layout toggle.
  *   - Persistence of window/workspace state (module data persistence
  *     via persistence.js is already live).
+ *   - Lock screen overlay (Spec §12).
  */
 
 // Side-effect imports: modules register themselves with the registry.
@@ -45,7 +46,7 @@ import './modules/tasks.js';
 // Registry/theme/persistence APIs. The WM is a generic shell: it only
 // ever talks to the module *registry*, never to specific modules
 // (Spec §8).
-import { DEFAULT_THEME_ID, applyTheme } from './themes.js';
+import { DEFAULT_THEME_ID, applyTheme, getAllThemes } from './themes.js';
 import { loadState, getModuleData, setModuleData } from './persistence.js';
 import { getAllModules, getModule } from './modules.js';
 
@@ -93,6 +94,7 @@ const state = {
     layoutMode: 'master-stack',
     masterRatio: DEFAULT_MASTER_RATIO,
     windows: [],
+    dwindleTree: null, // BSP tree of window ids (leaves); null in master-stack mode
   })),
 };
 
@@ -110,6 +112,7 @@ const tiledWindows = (ws) => ws.windows.filter((w) => w.state === 'tiled');
 
 function openWindow(moduleId) {
   const ws = currentWorkspace();
+  const prevFocusId = focusedWindowId;
   const win = {
     id: nextWindowId++,
     moduleId,
@@ -117,12 +120,20 @@ function openWindow(moduleId) {
     floatingGeometry: null,
     isFullscreen: false,
   };
-  // New windows always spawn as master, pushing the previous master
-  // into the top of the stack (Spec §4).
+  // Master-stack: new windows spawn as master, pushing the previous
+  // master into the top of the stack (Spec §4). Dwindle: the new
+  // window splits the currently focused window's space.
   const firstTiledIdx = ws.windows.findIndex((w) => w.state === 'tiled');
   if (firstTiledIdx === -1) ws.windows.push(win);
   else ws.windows.splice(firstTiledIdx, 0, win);
   focusedWindowId = win.id;
+  if (ws.layoutMode === 'dwindle') {
+    ws.dwindleTree = treeInsert(
+      ws.dwindleTree,
+      dwindleSplitTarget(ws, prevFocusId),
+      win.id
+    );
+  }
   render();
   return win;
 }
@@ -150,6 +161,9 @@ function closeWindow(id) {
   const win = ws.windows[idx];
   ws.windows.splice(idx, 1);
   unmountWindow(win); // give the module a chance to tear down (Spec §8)
+  if (ws.layoutMode === 'dwindle' && win.state === 'tiled') {
+    ws.dwindleTree = treeRemove(ws.dwindleTree, win.id); // sibling collapses in
+  }
   // focus the window that took its place, if any
   focusedWindowId = ws.windows.length
     ? ws.windows[Math.min(idx, ws.windows.length - 1)].id
@@ -186,6 +200,7 @@ function applyFocusClasses() {
 /* ---------- window state toggles ---------- */
 
 function toggleFloating(id) {
+  const ws = currentWorkspace();
   const win = findWindow(id);
   if (!win || win.isFullscreen) return;
   if (win.state === 'tiled') {
@@ -193,9 +208,17 @@ function toggleFloating(id) {
     // floating geometry (Spec §5); remaining tiled windows reflow.
     win.floatingGeometry = win._lastRect ?? { x: 60, y: 60, w: 480, h: 320 };
     win.state = 'floating';
+    if (ws.layoutMode === 'dwindle') {
+      ws.dwindleTree = treeRemove(ws.dwindleTree, win.id); // collapse node
+    }
   } else {
     win.state = 'tiled';
     win.floatingGeometry = null; // tiled geometry is derived, not stored
+    if (ws.layoutMode === 'dwindle') {
+      // re-enter the tiling tree by splitting a sibling's space
+      const targetId = dwindleSplitTarget(ws, focusedWindowId, win.id);
+      ws.dwindleTree = treeInsert(ws.dwindleTree, targetId, win.id);
+    }
   }
   render();
 }
@@ -211,6 +234,7 @@ function toggleFullscreen(id) {
 
 function promoteToMaster(id) {
   const ws = currentWorkspace();
+  if (ws.layoutMode !== 'master-stack') return; // no "master" in dwindle
   const idx = ws.windows.findIndex((w) => w.id === id);
   const masterIdx = ws.windows.findIndex((w) => w.state === 'tiled');
   if (idx === -1 || masterIdx === -1 || idx === masterIdx) return;
@@ -220,9 +244,21 @@ function promoteToMaster(id) {
   render();
 }
 
-function resizeMasterRatio(delta) {
+/** Adjust the active layout's split (Spec §10). master-stack: only the
+ * horizontal master ratio; dwindle: the focused window's parent split. */
+function resizeSplit(delta, axis) {
   const ws = currentWorkspace();
-  ws.masterRatio = clamp(ws.masterRatio + delta, MIN_MASTER_RATIO, MAX_MASTER_RATIO);
+  if (ws.layoutMode === 'dwindle') {
+    const parent =
+      focusedWindowId != null
+        ? findParentNode(ws.dwindleTree, focusedWindowId)
+        : null;
+    if (!parent) return;
+    parent.ratio = clamp(parent.ratio + delta, MIN_MASTER_RATIO, MAX_MASTER_RATIO);
+  } else {
+    if (axis !== 'h') return; // no vertical resize in master-stack
+    ws.masterRatio = clamp(ws.masterRatio + delta, MIN_MASTER_RATIO, MAX_MASTER_RATIO);
+  }
   render();
 }
 
@@ -232,6 +268,9 @@ function swapWindows(aId, bId) {
   const j = ws.windows.findIndex((w) => w.id === bId);
   if (i === -1 || j === -1) return;
   [ws.windows[i], ws.windows[j]] = [ws.windows[j], ws.windows[i]];
+  if (ws.layoutMode === 'dwindle') {
+    ws.dwindleTree = treeSwap(ws.dwindleTree, aId, bId);
+  }
   render();
 }
 
@@ -241,6 +280,108 @@ function switchWorkspace(n) {
   focusedWindowId = ws.windows.length
     ? ws.windows[ws.windows.length - 1].id
     : null;
+  render();
+}
+
+/* ---------- dwindle layout (Spec §4) ----------
+   Hyprland-style BSP: a per-workspace binary tree whose leaves are
+   window ids. Internal nodes store their split ratio (default 0.5);
+   the split *axis* is chosen at layout time from the container's
+   aspect ratio (wide = left/right, tall = top/bottom), so the same
+   tree reflows correctly when the viewport resizes. A new window
+   splits the node of the currently focused window. */
+
+function treeInsert(node, targetId, newId) {
+  if (node == null) return newId; // first window in the workspace
+  if (typeof node === 'number') {
+    return node === targetId ? { left: node, right: newId, ratio: 0.5 } : node;
+  }
+  return {
+    left: treeInsert(node.left, targetId, newId),
+    right: treeInsert(node.right, targetId, newId),
+    ratio: node.ratio,
+  };
+}
+
+function treeRemove(node, id) {
+  if (node == null || typeof node === 'number') return node === id ? null : node;
+  const left = treeRemove(node.left, id);
+  const right = treeRemove(node.right, id);
+  if (left === null) return right; // collapse: sibling takes the space
+  if (right === null) return left;
+  return { left, right, ratio: node.ratio };
+}
+
+function treeSwap(node, aId, bId) {
+  if (typeof node === 'number') {
+    return node === aId ? bId : node === bId ? aId : node;
+  }
+  return {
+    left: treeSwap(node.left, aId, bId),
+    right: treeSwap(node.right, aId, bId),
+    ratio: node.ratio,
+  };
+}
+
+function treeFirstLeaf(node) {
+  if (node == null) return null;
+  if (typeof node === 'number') return node;
+  return treeFirstLeaf(node.left) ?? treeFirstLeaf(node.right);
+}
+
+/** The internal node whose direct child is the focused leaf. */
+function findParentNode(node, id) {
+  if (node == null || typeof node === 'number') return null;
+  if (node.left === id || node.right === id) return node;
+  return findParentNode(node.left, id) ?? findParentNode(node.right, id);
+}
+
+function layoutDwindle(node, rect, out) {
+  if (typeof node === 'number') {
+    out.set(node, rect);
+    return;
+  }
+  const vertical = rect.w >= rect.h; // wide container -> split left/right
+  if (vertical) {
+    const split = Math.round(rect.w * node.ratio);
+    layoutDwindle(node.left, { x: rect.x, y: rect.y, w: split, h: rect.h }, out);
+    layoutDwindle(node.right, { x: rect.x + split, y: rect.y, w: rect.w - split, h: rect.h }, out);
+  } else {
+    const split = Math.round(rect.h * node.ratio);
+    layoutDwindle(node.left, { x: rect.x, y: rect.y, w: rect.w, h: split }, out);
+    layoutDwindle(node.right, { x: rect.x, y: rect.y + split, w: rect.w, h: rect.h - split }, out);
+  }
+}
+
+/** Pick the tiled window whose space a new/retiled window should split. */
+function dwindleSplitTarget(ws, preferredId, excludeId = null) {
+  const preferred = ws.windows.find(
+    (w) => w.id === preferredId && w.state === 'tiled' && w.id !== excludeId
+  );
+  if (preferred) return preferred.id;
+  return (
+    treeFirstLeaf(ws.dwindleTree) ??
+    ws.windows.find((w) => w.state === 'tiled' && w.id !== excludeId)?.id ??
+    null
+  );
+}
+
+/** Toggle the current workspace's tiling mode (pill icon, Spec §3/§4). */
+function toggleLayout() {
+  const ws = currentWorkspace();
+  if (ws.layoutMode === 'master-stack') {
+    ws.layoutMode = 'dwindle';
+    // build the BSP tree from the current tiled order
+    ws.dwindleTree = null;
+    let prev = null;
+    for (const w of tiledWindows(ws)) {
+      ws.dwindleTree = treeInsert(ws.dwindleTree, prev, w.id);
+      prev = w.id;
+    }
+  } else {
+    ws.layoutMode = 'master-stack'; // array order already reflects swaps
+    ws.dwindleTree = null;
+  }
   render();
 }
 
@@ -309,21 +450,24 @@ function render() {
   if (!ws.windows.length) {
     const hint = document.createElement('div');
     hint.id = 'empty-workspace-hint';
-    // TEMP text; becomes "Alt+Enter to launch a module" with the launcher
-    hint.textContent = 'empty workspace — Alt+N opens a module';
+    hint.textContent = 'Alt+Enter to launch a module';
     workspaceRoot.appendChild(hint);
+    renderPill();
     return;
   }
 
   const W = workspaceRoot.clientWidth;
   const H = workspaceRoot.clientHeight;
 
-  // Master-stack geometry, fully derived (Spec §4): first tiled window
-  // is master (masterRatio width, full height); the rest split the
-  // right column into equal-height slices.
+  // Layout geometry, fully derived (Spec §4). master-stack: first
+  // tiled window is master (masterRatio width, full height); the rest
+  // split the right column into equal-height slices. dwindle: walk
+  // the per-workspace BSP tree.
   const tiled = tiledWindows(ws);
   const rects = new Map();
-  if (tiled.length === 1) {
+  if (ws.layoutMode === 'dwindle' && ws.dwindleTree) {
+    layoutDwindle(ws.dwindleTree, { x: 0, y: 0, w: W, h: H }, rects);
+  } else if (tiled.length === 1) {
     rects.set(tiled[0].id, { x: 0, y: 0, w: W, h: H });
   } else if (tiled.length > 1) {
     const masterW = Math.round(W * ws.masterRatio);
@@ -361,6 +505,8 @@ function render() {
 
     workspaceRoot.appendChild(el); // re-attach the cached element
   }
+
+  renderPill();
 }
 
 function setRect(el, r) {
@@ -381,22 +527,17 @@ function bindKeybinds() {
     const key = e.key.toLowerCase();
     let handled = true;
 
-    if (key === 'h') e.shiftKey ? resizeMasterRatio(-RATIO_STEP) : cycleFocus(-1);
-    else if (key === 'l') e.shiftKey ? resizeMasterRatio(+RATIO_STEP) : cycleFocus(+1);
-    // j/k: no vertical resize in master-stack (stack slices are fixed
-    // height); will map to dwindle split adjustments later
-    else if (key === 'j' && !e.shiftKey) cycleFocus(+1);
-    else if (key === 'k' && !e.shiftKey) cycleFocus(-1);
+    if (key === 'h') e.shiftKey ? resizeSplit(-RATIO_STEP, 'h') : cycleFocus(-1);
+    else if (key === 'l') e.shiftKey ? resizeSplit(+RATIO_STEP, 'h') : cycleFocus(+1);
+    // Shift+J/K resize vertically: dwindle splits only (master-stack
+    // stack slices are fixed height)
+    else if (key === 'j') e.shiftKey ? resizeSplit(-RATIO_STEP, 'v') : cycleFocus(+1);
+    else if (key === 'k') e.shiftKey ? resizeSplit(+RATIO_STEP, 'v') : cycleFocus(-1);
     else if (key === 'w' && !e.shiftKey) promoteToMaster(focusedWindowId);
     else if (key === 'v' && !e.shiftKey) toggleFloating(focusedWindowId);
     else if (key === 'f' && !e.shiftKey) toggleFullscreen(focusedWindowId);
     else if (key === 'q' && !e.shiftKey) closeWindow(focusedWindowId);
-    // TEMP: launches the first registered module until the launcher exists
-    else if (key === 'n' && !e.shiftKey) {
-      const first = getAllModules()[0];
-      if (first) launchModule(first.id);
-    }
-    else if (key === 'enter') { /* module launcher — TODO */ }
+    else if (key === 'enter') toggleLauncher();
     else if (/^[1-9]$/.test(key) && !e.shiftKey) switchWorkspace(Number(key) - 1);
     else handled = false;
 
@@ -531,10 +672,222 @@ function onDragEnd(e) {
   // 'ratio' commits live via render() during move
 }
 
+/* ---------- workspace indicator pill (Spec §3) ---------- */
+
+const ICON_LAYOUT = '\uf0db'; // Nerd Font "columns" glyph
+const ICON_THEME = '\uf042';  // Nerd Font "adjust" glyph (half-filled circle)
+
+function renderPill() {
+  const pill = document.getElementById('workspace-pill');
+  if (!pill) return;
+  pill.innerHTML = '';
+
+  // layout + theme toggles live left of the workspace numbers
+  const layoutBtn = document.createElement('span');
+  layoutBtn.className = 'pill-icon';
+  layoutBtn.textContent = ICON_LAYOUT;
+  layoutBtn.title = 'toggle layout (master-stack / dwindle)';
+  layoutBtn.addEventListener('click', toggleLayout);
+
+  const themeBtn = document.createElement('span');
+  themeBtn.className = 'pill-icon';
+  themeBtn.textContent = ICON_THEME;
+  themeBtn.title = 'theme picker';
+  themeBtn.addEventListener('click', toggleThemePicker);
+
+  pill.append(layoutBtn, themeBtn);
+
+  for (let n = 1; n <= WORKSPACE_COUNT; n++) {
+    // slots 1-3 always visible; 4-9 only while populated (Spec §3)
+    if (n > 3 && !state.workspaces[n - 1].windows.length) continue;
+    const slot = document.createElement('span');
+    slot.className = 'pill-slot' + (n - 1 === state.activeWorkspace ? ' active' : '');
+    slot.textContent = String(n);
+    slot.addEventListener('click', () => switchWorkspace(n - 1));
+    pill.appendChild(slot);
+  }
+}
+
+/* ---------- module launcher (Spec §7) ---------- */
+
+let launcher = null; // { overlay, input, list, filtered, selected }
+
+function toggleLauncher() {
+  launcher ? closeLauncher() : openLauncher();
+}
+
+function openLauncher() {
+  if (launcher) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'launcher';
+
+  const box = document.createElement('div');
+  box.className = 'launcher-box';
+
+  const input = document.createElement('input');
+  input.className = 'launcher-input';
+  input.type = 'text';
+  input.placeholder = 'search modules…';
+
+  const list = document.createElement('ul');
+  list.className = 'launcher-list';
+
+  box.append(input, list);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  launcher = { overlay, input, list, filtered: [], selected: 0 };
+
+  input.addEventListener('input', () => filterLauncher(input.value));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { launcherMove(1); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { launcherMove(-1); e.preventDefault(); }
+    else if (e.key === 'Enter') { e.preventDefault(); confirmLauncher(); }
+    else if (e.key === 'Escape') closeLauncher();
+  });
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) closeLauncher(); // click outside closes
+  });
+
+  filterLauncher('');
+  input.focus();
+}
+
+function closeLauncher() {
+  launcher?.overlay.remove();
+  launcher = null;
+}
+
+/** Subsequence fuzzy match: every query char appears in order. */
+function fuzzyMatch(query, text) {
+  const q = query.toLowerCase();
+  const t = text.toLowerCase();
+  let i = 0;
+  for (const ch of t) {
+    if (ch === q[i]) i++;
+    if (i === q.length) return true;
+  }
+  return i === q.length;
+}
+
+function filterLauncher(query) {
+  if (!launcher) return; // stale input events after close
+  launcher.filtered = getAllModules().filter((m) => fuzzyMatch(query, m.name));
+  launcher.selected = 0;
+  renderLauncherList();
+}
+
+function renderLauncherList() {
+  if (!launcher) return;
+  const { list, filtered, selected } = launcher;
+  list.innerHTML = '';
+  if (!filtered.length) {
+    const empty = document.createElement('li');
+    empty.className = 'launcher-empty';
+    empty.textContent = 'no matching modules';
+    list.appendChild(empty);
+    return;
+  }
+  filtered.forEach((mod, i) => {
+    const item = document.createElement('li');
+    item.className = 'launcher-item' + (i === selected ? ' selected' : '');
+
+    const icon = document.createElement('span');
+    icon.className = 'launcher-icon';
+    icon.textContent = mod.icon;
+    const name = document.createElement('span');
+    name.textContent = mod.name;
+    item.append(icon, name);
+
+    item.addEventListener('click', () => confirmLauncher());
+    item.addEventListener('mouseover', () => {
+      if (launcher.selected !== i) {
+        launcher.selected = i;
+        renderLauncherList();
+      }
+    });
+    list.appendChild(item);
+  });
+}
+
+function launcherMove(delta) {
+  if (!launcher) return;
+  const n = launcher.filtered.length;
+  if (!n) return;
+  launcher.selected = (launcher.selected + delta + n) % n;
+  renderLauncherList();
+}
+
+function confirmLauncher() {
+  const mod = launcher?.filtered[launcher.selected];
+  if (!mod) return;
+  closeLauncher();
+  launchModule(mod.id); // singleton-aware (Spec §5/§7)
+}
+
+/* ---------- theme picker (Spec §6) ---------- */
+
+let themePicker = null;
+
+function toggleThemePicker() {
+  themePicker ? closeThemePicker() : openThemePicker();
+}
+
+function openThemePicker() {
+  if (themePicker) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'theme-picker';
+  const box = document.createElement('div');
+  box.className = 'theme-box';
+  const list = document.createElement('ul');
+  list.className = 'theme-list';
+
+  for (const theme of getAllThemes()) {
+    const item = document.createElement('li');
+    item.className = 'theme-item';
+
+    const swatches = document.createElement('span');
+    swatches.className = 'theme-swatches';
+    for (const color of Object.values(theme.colors)) {
+      const sw = document.createElement('span');
+      sw.className = 'theme-swatch';
+      sw.style.background = color;
+      swatches.appendChild(sw);
+    }
+
+    const name = document.createElement('span');
+    name.className = 'theme-name';
+    name.textContent = theme.name;
+    item.append(swatches, name);
+
+    item.addEventListener('click', () => {
+      applyTheme(theme.id); // instant via CSS custom properties
+      closeThemePicker();
+    });
+    list.appendChild(item);
+  }
+
+  box.appendChild(list);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  themePicker = { overlay };
+
+  overlay.addEventListener('mousedown', (e) => {
+    if (e.target === overlay) closeThemePicker();
+  });
+}
+
+function closeThemePicker() {
+  themePicker?.overlay.remove();
+  themePicker = null;
+}
+
 /**
  * App bootstrap.
  * Applies theme, starts the top-bar clock, binds WM keybinds + mouse
- * behavior, seeds test windows until the module launcher exists.
+ * behavior. Workspaces start empty — Alt+Enter opens the launcher.
  */
 function init() {
   const restored = loadState();
@@ -546,11 +899,10 @@ function init() {
   bindMouse();
   window.addEventListener('resize', render);
 
-  // TEMP seeding until the launcher exists: open the first registered
-  // module (registry order — currently Tasks) so boot isn't empty.
-  const firstModule = getAllModules()[0];
-  if (firstModule) openWindow(firstModule.id);
+  render(); // initial paint: empty-workspace hint + pill
 }
+
+
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
