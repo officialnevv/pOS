@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal OS</title>
+
+  <!--
+    Fonts & Icons (to be wired up later):
+    - Geist Mono / JetBrains Mono (self-hosted or CDN)
+    - Nerd Font glyphs for module icons
+  -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-theme="everforest">
+
+  <!-- ============================================================
+       Lock Screen overlay (Spec §12)
+       Shown on page load; PIN-gated, purely client-side.
+       To be rendered/managed by JS (lock screen logic TBD).
+       ============================================================ -->
+  <!-- <div id="lock-screen"> ... </div> -->
+
+  <!-- ============================================================
+       Top Bar (Spec §2)
+       Left: "Personal OS" | Center: live date | Right: live time
+       ============================================================ -->
+  <header id="top-bar">
+    <div id="top-bar-left">Personal OS</div>
+    <div id="top-bar-center"><!-- live date, JS-driven (wm-core) --></div>
+    <div id="top-bar-right"><!-- live time, JS-driven (wm-core) --></div>
+  </header>
+
+  <!-- ============================================================
+       Workspace Root (Spec §3, §4)
+       All tiled/floating windows render inside here.
+       Empty workspaces show a centered hint ("Alt+Enter to launch
+       a module"). Windows themselves are created by wm-core.js.
+       ============================================================ -->
+  <main id="workspace-root">
+    <!-- Empty-workspace hint element will be injected/toggled by wm-core -->
+  </main>
+
+  <!-- ============================================================
+       Workspace Indicator Pill (Spec §3)
+       Floating pill at the bottom:
+       - workspace numbers 1-3 always visible, 4-9 when non-empty
+       - layout toggle icon (master-stack <-> dwindle)
+       - theme toggle icon (opens theme picker)
+       ============================================================ -->
+  <nav id="workspace-pill">
+    <!-- populated dynamically by wm-core.js -->
+  </nav>
+
+  <!-- ============================================================
+       Module Launcher popup (Spec §7)
+       Opened via Alt+Enter; centered popup with fuzzy-filtered,
+       keyboard-navigable vertical list of registered modules.
+       ============================================================ -->
+  <!-- <div id="launcher"> ... </div> -->
+
+  <!-- ============================================================
+       Theme Picker popup (Spec §6)
+       Opened via the pill's theme toggle icon; centered popup with
+       swatch previews of every registered theme.
+       ============================================================ -->
+  <!-- <div id="theme-picker"> ... </div> -->
+
+  <!--
+    Entry point. wm-core.js is the app bootstrap: it imports the
+    module registry, individual modules, themes, and persistence,
+    then initializes the window manager.
+  -->
+  <script type="module" src="js/wm-core.js"></script>
+</body>
+</html>

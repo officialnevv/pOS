@@ -1,0 +1,52 @@
+/*
+ * PersonalOS — style.css
+ * ----------------------------------------------------------------------
+ * Global stylesheet. All colors come from theme CSS custom properties
+ * (Spec §6): themes swap a `data-theme` attribute on <body> and every
+ * rule below references var(--color-*) so switching is instant.
+ *
+ * Planned sections (to be implemented):
+ *   1. Theme variable definitions (one block per registered theme)
+ *   2. Reset / base (sharp corners everywhere: border-radius: 0)
+ *   3. Top bar (fixed, three zones: name / date / time)
+ *   4. Workspace root + empty-state hint
+ *   5. Windows (2px solid border, no chrome, embedded module titles)
+ *   6. Tiling layouts (master-stack + dwindle geometry)
+ *   7. Workspace indicator pill (bottom, floating)
+ *   8. Module launcher popup (vertical list, fuzzy filter)
+ *   9. Theme picker popup (swatch previews)
+ *  10. Lock screen overlay
+ *  11. Tasks module styles (embedded title, checkbox items)
+ *  12. Fonts: Geist Mono / JetBrains Mono; Nerd Font glyph icons
+ */
+
+/* ---------------------------------------------------------------
+   Placeholder theme variables (Everforest dark default).
+   The full theme registry lives in js/themes.js; each theme will
+   define: --color-bg, --color-fg, --color-accent, --color-border,
+   --color-accent-secondary.
+   --------------------------------------------------------------- */
+:root {
+  --color-bg: #2d353b;             /* everforest dark background */
+  --color-fg: #d3c6aa;
+  --color-accent: #a7c080;
+  --color-border: #475258;
+  --color-accent-secondary: #e69875;
+}
+
+/* ---------------------------------------------------------------
+   Base
+   --------------------------------------------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 0; /* sharp corners everywhere, per Spec §2 */
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: "JetBrains Mono", "Geist Mono", monospace;
+  overflow: hidden; /* the WM owns scrolling, not the page */
+}
