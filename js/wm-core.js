@@ -31,9 +31,10 @@
  *     contextmenu suppressed) (Spec §11).
  *   - Shell chrome: live top-bar clock/date, empty-workspace hint.
  *
- * Still TODO in later phases:
- *   - Persistence of window/workspace state (module data persistence
- *     via persistence.js is already live).
+ *   - Persistence: full WM state (workspaces, windows, layouts,
+ *     theme) saved to the single localStorage blob on every meaningful
+ *     change and restored on page load (Spec §9); module data lives
+ *     under the same blob's moduleData section.
  */
 
 // Side-effect imports: modules register themselves with the registry.
@@ -46,7 +47,7 @@ import './modules/tasks.js';
 // ever talks to the module *registry*, never to specific modules
 // (Spec §8).
 import { DEFAULT_THEME_ID, applyTheme, getAllThemes } from './themes.js';
-import { loadState, getModuleData, setModuleData } from './persistence.js';
+import { loadState, saveState, getModuleData, setModuleData } from './persistence.js';
 import { getAllModules, getModule } from './modules.js';
 import { initLockScreen } from './lockscreen.js';
 
@@ -134,6 +135,7 @@ function openWindow(moduleId) {
       win.id
     );
   }
+  persistState();
   render();
   return win;
 }
@@ -168,6 +170,7 @@ function closeWindow(id) {
   focusedWindowId = ws.windows.length
     ? ws.windows[Math.min(idx, ws.windows.length - 1)].id
     : null;
+  persistState();
   render(); // empty workspace falls back to the hint (Spec §3/§5)
 }
 
@@ -220,6 +223,7 @@ function toggleFloating(id) {
       ws.dwindleTree = treeInsert(ws.dwindleTree, targetId, win.id);
     }
   }
+  persistState();
   render();
 }
 
@@ -229,6 +233,7 @@ function toggleFullscreen(id) {
   // overlay flag only — tiled slots / floating geometry untouched,
   // everything underneath is unaffected (Spec §5)
   win.isFullscreen = !win.isFullscreen;
+  persistState();
   render();
 }
 
@@ -241,6 +246,7 @@ function promoteToMaster(id) {
   if (ws.windows[idx].state !== 'tiled') return; // promotion is for tiled windows
   // swap focused window with the current master (Spec §10)
   [ws.windows[idx], ws.windows[masterIdx]] = [ws.windows[masterIdx], ws.windows[idx]];
+  persistState();
   render();
 }
 
@@ -259,6 +265,7 @@ function resizeSplit(delta, axis) {
     if (axis !== 'h') return; // no vertical resize in master-stack
     ws.masterRatio = clamp(ws.masterRatio + delta, MIN_MASTER_RATIO, MAX_MASTER_RATIO);
   }
+  persistState();
   render();
 }
 
@@ -271,6 +278,7 @@ function swapWindows(aId, bId) {
   if (ws.layoutMode === 'dwindle') {
     ws.dwindleTree = treeSwap(ws.dwindleTree, aId, bId);
   }
+  persistState();
   render();
 }
 
@@ -280,6 +288,7 @@ function switchWorkspace(n) {
   focusedWindowId = ws.windows.length
     ? ws.windows[ws.windows.length - 1].id
     : null;
+  persistState();
   render();
 }
 
@@ -382,6 +391,7 @@ function toggleLayout() {
     ws.layoutMode = 'master-stack'; // array order already reflects swaps
     ws.dwindleTree = null;
   }
+  persistState();
   render();
 }
 
@@ -514,6 +524,113 @@ function setRect(el, r) {
   el.style.top = `${r.y}px`;
   el.style.width = `${r.w}px`;
   el.style.height = `${r.h}px`;
+}
+
+/* ---------- persistence (Spec §9) ----------
+   Everything lives under the single 'personal-os-state' JSON key:
+   { activeWorkspace, activeTheme, workspaces: { "1".. "9" }, moduleData }
+   persistState() merges the WM slice over the loaded blob so the
+   moduleData section (owned by modules via persistence.js) survives.
+   Saved window ids are kept on restore, so dwindle trees (which
+   reference window ids) round-trip without remapping. */
+
+function serializeWindows(ws) {
+  const firstTiledId = tiledWindows(ws)[0]?.id ?? null;
+  return ws.windows.map((w) => ({
+    id: w.id,
+    moduleId: w.moduleId,
+    state: w.state,
+    floatingGeometry: w.floatingGeometry,
+    isFullscreen: w.isFullscreen,
+    isMaster: w.state === 'tiled' && w.id === firstTiledId,
+  }));
+}
+
+/** Save the full WM state (called on every meaningful change). */
+function persistState() {
+  const prev = loadState() ?? {};
+  saveState({
+    ...prev, // preserve moduleData (Spec §9: modules own their data)
+    activeWorkspace: state.activeWorkspace + 1, // 1-based, per spec shape
+    activeTheme: document.documentElement.dataset.theme || DEFAULT_THEME_ID,
+    workspaces: Object.fromEntries(
+      state.workspaces.map((ws, i) => [
+        String(i + 1),
+        {
+          layoutMode: ws.layoutMode,
+          masterRatio: ws.masterRatio,
+          dwindleTree: ws.dwindleTree, // per-workspace dwindle split state
+          windows: serializeWindows(ws),
+        },
+      ])
+    ),
+  });
+}
+
+/** Rebuild all workspaces from the saved blob; returns the theme id. */
+function restoreState() {
+  const saved = loadState();
+  if (!saved) return DEFAULT_THEME_ID;
+
+  if (typeof saved.activeWorkspace === 'number') {
+    state.activeWorkspace = clamp(saved.activeWorkspace - 1, 0, WORKSPACE_COUNT - 1);
+  }
+
+  let maxId = 0;
+  const savedWorkspaces = saved.workspaces ?? {};
+  for (let i = 0; i < WORKSPACE_COUNT; i++) {
+    const s = savedWorkspaces[String(i + 1)];
+    if (!s) continue;
+    const ws = state.workspaces[i];
+    ws.layoutMode = s.layoutMode === 'dwindle' ? 'dwindle' : 'master-stack';
+    ws.masterRatio = clamp(
+      typeof s.masterRatio === 'number' ? s.masterRatio : DEFAULT_MASTER_RATIO,
+      MIN_MASTER_RATIO,
+      MAX_MASTER_RATIO
+    );
+    for (const w of Array.isArray(s.windows) ? s.windows : []) {
+      // skip unknown modules (e.g. a module that was removed later)
+      if (!w || typeof w.moduleId !== 'string' || !getModule(w.moduleId)) continue;
+      const g = w.floatingGeometry;
+      ws.windows.push({
+        id: typeof w.id === 'number' ? w.id : nextWindowId++,
+        moduleId: w.moduleId,
+        state: w.state === 'floating' ? 'floating' : 'tiled',
+        floatingGeometry:
+          g && [g.x, g.y, g.w, g.h].every((n) => typeof n === 'number') ? g : null,
+        isFullscreen: !!w.isFullscreen,
+      });
+      maxId = Math.max(maxId, ws.windows[ws.windows.length - 1].id);
+    }
+    if (ws.layoutMode === 'dwindle' && s.dwindleTree) {
+      // drop tree leaves whose window no longer exists
+      let tree = s.dwindleTree;
+      const ids = new Set(ws.windows.map((w) => w.id));
+      for (const leaf of treeLeaves(tree)) {
+        if (!ids.has(leaf)) tree = treeRemove(tree, leaf);
+      }
+      ws.dwindleTree = tree;
+    }
+  }
+  nextWindowId = maxId + 1;
+
+  const ws = currentWorkspace();
+  focusedWindowId = ws.windows.length
+    ? ws.windows[ws.windows.length - 1].id
+    : null;
+
+  return typeof saved.activeTheme === 'string' ? saved.activeTheme : DEFAULT_THEME_ID;
+}
+
+/** All leaf window ids in a dwindle tree. */
+function treeLeaves(node, out = []) {
+  if (node == null) return out;
+  if (typeof node === 'number') out.push(node);
+  else {
+    treeLeaves(node.left, out);
+    treeLeaves(node.right, out);
+  }
+  return out;
 }
 
 /* ---------- keybinds (Spec §10) ---------- */
@@ -658,6 +775,7 @@ function onDragEnd(e) {
       w: Math.round(r.width),
       h: Math.round(r.height),
     };
+    persistState();
     render();
   } else if (drag.type === 'swap') {
     // tiled Alt+Left-drag: swap with whichever window was dropped onto
@@ -668,8 +786,9 @@ function onDragEnd(e) {
         swapWindows(drag.win.id, target.id);
       }
     }
+  } else if (drag.type === 'ratio') {
+    persistState(); // ratio committed live during move; save the final value
   }
-  // 'ratio' commits live via render() during move
 }
 
 /* ---------- workspace indicator pill (Spec §3) ---------- */
@@ -866,6 +985,7 @@ function openThemePicker() {
 
     item.addEventListener('click', () => {
       applyTheme(theme.id); // instant via CSS custom properties
+      persistState(); // theme change is a meaningful change (Spec §9)
       closeThemePicker();
     });
     list.appendChild(item);
@@ -892,8 +1012,7 @@ function closeThemePicker() {
  * behavior. Workspaces start empty — Alt+Enter opens the launcher.
  */
 function init() {
-  const restored = loadState();
-  applyTheme(restored?.activeTheme ?? DEFAULT_THEME_ID);
+  applyTheme(restoreState()); // restore WM state + theme (Spec §9)
   startClock();
 
   workspaceRoot = document.getElementById('workspace-root');
