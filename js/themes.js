@@ -17,9 +17,11 @@
  * Adding a new theme = appending one entry here. No other file changes.
  */
 
+/** Default theme used on first load and as a fallback. */
+export const DEFAULT_THEME_ID = 'everforest';
+
 /**
- * Append-only theme registry. Placeholder default entry; the full
- * canonical palettes will be filled in during implementation.
+ * Append-only theme registry. Everforest dark (canonical palette).
  */
 export const THEMES = [
   {
@@ -36,12 +38,23 @@ export const THEMES = [
 ];
 
 /**
- * Apply a theme by id (placeholder — real logic TBD).
- * Will set CSS custom properties / data-theme attribute on <body>.
+ * Apply a theme by id: writes its 5 core colors as CSS custom
+ * properties on the root element (<html>) and mirrors the theme id as
+ * a data-theme attribute for any attribute-based styling hooks.
+ * Falls back to the default theme if the id is unknown.
  */
 export function applyTheme(themeId) {
-  // TODO: look up theme in THEMES, apply its colors as CSS vars.
-  return themeId;
+  const theme = getTheme(themeId) ?? getTheme(DEFAULT_THEME_ID);
+  const root = document.documentElement;
+
+  root.style.setProperty('--color-bg', theme.colors.bg);
+  root.style.setProperty('--color-fg', theme.colors.fg);
+  root.style.setProperty('--color-accent', theme.colors.accent);
+  root.style.setProperty('--color-border', theme.colors.border);
+  root.style.setProperty('--color-accent-secondary', theme.colors.accentSecondary);
+  root.dataset.theme = theme.id;
+
+  return theme.id;
 }
 
 /** Get a single theme by id (or undefined). */

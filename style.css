@@ -2,40 +2,75 @@
  * PersonalOS — style.css
  * ----------------------------------------------------------------------
  * Global stylesheet. All colors come from theme CSS custom properties
- * (Spec §6): themes swap a `data-theme` attribute on <body> and every
- * rule below references var(--color-*) so switching is instant.
+ * (Spec §6): themes swap a `data-theme` attribute + --color-* variables
+ * on the root element (via js/themes.js) so all styling references
+ * var(--color-*) and switching is instant.
  *
- * Planned sections (to be implemented):
- *   1. Theme variable definitions (one block per registered theme)
- *   2. Reset / base (sharp corners everywhere: border-radius: 0)
- *   3. Top bar (fixed, three zones: name / date / time)
- *   4. Workspace root + empty-state hint
- *   5. Windows (2px solid border, no chrome, embedded module titles)
- *   6. Tiling layouts (master-stack + dwindle geometry)
- *   7. Workspace indicator pill (bottom, floating)
- *   8. Module launcher popup (vertical list, fuzzy filter)
- *   9. Theme picker popup (swatch previews)
- *  10. Lock screen overlay
- *  11. Tasks module styles (embedded title, checkbox items)
- *  12. Fonts: Geist Mono / JetBrains Mono; Nerd Font glyph icons
+ * Sections:
+ *   1. Fonts (self-hosted Geist Mono + JetBrains Mono)
+ *   2. Theme variable definitions (fallback defaults; live values set
+ *      by js/themes.js on the root element)
+ *   3. Reset / base (sharp corners everywhere: border-radius: 0)
+ *   4. Top bar (fixed, three zones: name / date / time)
+ *   5. Workspace root + empty-state hint          (WM phase)
+ *   6. Windows (2px solid border, no chrome)      (WM phase)
+ *   7. Tiling layouts (master-stack + dwindle)    (WM phase)
+ *   8. Workspace indicator pill                   (WM phase)
+ *   9. Module launcher popup                      (WM phase)
+ *  10. Theme picker popup                         (WM phase)
+ *  11. Lock screen overlay                        (WM phase)
+ *  12. Tasks module styles                        (WM phase)
  */
 
 /* ---------------------------------------------------------------
-   Placeholder theme variables (Everforest dark default).
-   The full theme registry lives in js/themes.js; each theme will
-   define: --color-bg, --color-fg, --color-accent, --color-border,
-   --color-accent-secondary.
+   1. Fonts — self-hosted woff2 (latin subset) for offline use.
+      Nerd Font glyphs for module icons will be added later.
    --------------------------------------------------------------- */
-:root {
-  --color-bg: #2d353b;             /* everforest dark background */
-  --color-fg: #d3c6aa;
-  --color-accent: #a7c080;
-  --color-border: #475258;
-  --color-accent-secondary: #e69875;
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/fonts/geist-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("assets/fonts/geist-mono-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/fonts/jetbrains-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("assets/fonts/jetbrains-mono-700.woff2") format("woff2");
 }
 
 /* ---------------------------------------------------------------
-   Base
+   2. Theme variables — fallback defaults (Everforest dark).
+      js/themes.js overwrites these live on the root element when a
+      theme is applied. 5 core colors per theme (Spec §6):
+      background, foreground, accent, border, secondary accent.
+   --------------------------------------------------------------- */
+:root {
+  --color-bg: #2d353b;             /* background           */
+  --color-fg: #d3c6aa;             /* foreground / text    */
+  --color-accent: #a7c080;         /* accent (green)       */
+  --color-border: #475258;         /* border / chrome      */
+  --color-accent-secondary: #e69875; /* secondary (orange) */
+}
+
+/* ---------------------------------------------------------------
+   3. Reset / base
    --------------------------------------------------------------- */
 * {
   margin: 0;
@@ -45,8 +80,53 @@
 }
 
 body {
-  background: var(--color-bg);
+  background: var(--color-bg); /* single solid background, no imagery */
   color: var(--color-fg);
-  font-family: "JetBrains Mono", "Geist Mono", monospace;
+  font-family: "Geist Mono", "JetBrains Mono", monospace;
+  font-size: 14px;
   overflow: hidden; /* the WM owns scrolling, not the page */
 }
+
+/* ---------------------------------------------------------------
+   4. Top bar — fixed, three zones (Spec §2):
+      left: project name | center: live date | right: live time
+   --------------------------------------------------------------- */
+#top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--color-bg);
+  border-bottom: 2px solid var(--color-border);
+  z-index: 1000;
+  user-select: none;
+}
+
+#top-bar-left {
+  justify-self: start;
+  font-weight: 700;
+  color: var(--color-accent);
+  letter-spacing: 0.05em;
+}
+
+#top-bar-center {
+  justify-self: center;
+  color: var(--color-fg);
+}
+
+#top-bar-right {
+  justify-self: end;
+  color: var(--color-fg);
+  font-variant-numeric: tabular-nums; /* no jitter as digits tick */
+}
+
+/* ---------------------------------------------------------------
+   5–12. Remaining sections are implemented with the window
+   manager phase (see roadmap in the header comment).
+   --------------------------------------------------------------- */
+

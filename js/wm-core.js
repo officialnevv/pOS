@@ -40,25 +40,39 @@ import './modules.js';
 import './modules/tasks.js';
 
 // Registry/theme/persistence APIs used during init (real usage TBD).
-import { getAllModules } from './modules.js';
-import { applyTheme } from './themes.js';
+import { DEFAULT_THEME_ID, applyTheme } from './themes.js';
 import { loadState } from './persistence.js';
+
+/* ---------------------------------------------------------------
+   Top bar clock (Spec §2) — live date (center) + time (right).
+   Part of the shell chrome, not the WM proper.
+   --------------------------------------------------------------- */
+
+const DATE_OPTS = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
+
+function tickClock() {
+  const now = new Date();
+  const dateEl = document.getElementById('top-bar-center');
+  const timeEl = document.getElementById('top-bar-right');
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('en-GB', DATE_OPTS).replace(/,/g, '');
+  if (timeEl) timeEl.textContent = now.toLocaleTimeString('en-GB', { hour12: false });
+}
+
+function startClock() {
+  tickClock();
+  setInterval(tickClock, 1000);
+}
 
 /**
  * App bootstrap (placeholder — real init logic TBD).
  * Will: restore state, apply theme, rebuild workspaces/windows,
- * bind keybinds + mouse handlers, start the top-bar clock.
+ * bind keybinds + mouse handlers.
+ * Currently: applies the theme and starts the top-bar clock.
  */
 function init() {
   const restored = loadState();
-  applyTheme(restored?.activeTheme ?? 'everforest');
-
-  // Placeholder: proves the module registry is wired up end-to-end.
-  // Replaced by real WM initialization during implementation.
-  const root = document.getElementById('workspace-root');
-  if (root) {
-    root.textContent = `Personal OS skeleton loaded — ${getAllModules().length} module(s) registered.`;
-  }
+  applyTheme(restored?.activeTheme ?? DEFAULT_THEME_ID);
+  startClock();
 }
 
 if (document.readyState === 'loading') {
