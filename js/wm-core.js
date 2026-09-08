@@ -250,24 +250,25 @@ function toggleFullscreen(id) {
   render();
 }
 
-/* ---------- direct border-drag resize of tiled windows (amendment) ----------
-   Hovering the shared boundary between two adjacent tiles (no Alt needed)
-   shows a resize cursor; dragging moves that boundary and both facing
-   edges reflow together. The boundary belongs to the unique BSP node
-   whose left/right subtrees hold the two windows, so its ratio is what
-   moves. */
+/* ---------- tiled window resizing (amendment) ----------
+   Two entry points, one behavior. Hovering the shared boundary between
+   two adjacent tiles (no Alt needed) shows a resize cursor; Alt+RightClick
+   works from anywhere in a tiled window. Every drag parameter is measured
+   from the rendered rects at mousedown — the split's on-screen line
+   position and which side of it the window sits on — never from tree
+   child order (first/second child does not reliably describe left/right
+   once a dwindle tree nests). During the drag the split line itself
+   follows the mouse 1:1 along its axis: horizontal mouse movement moves
+   the nearest vertical (left/right) line above the clicked window,
+   vertical movement the nearest horizontal (top/bottom) line, diagonal
+   movement both independently — the adjacent sibling window(s) sharing
+   each split adjust inversely. There is no anchor/quadrant concept for
+   tiled windows; that model is floating-only. */
 
 function subtreeHas(node, id) {
   if (node == null) return false;
   if (typeof node === 'number') return node === id;
   return subtreeHas(node.left, id) || subtreeHas(node.right, id);
-}
-
-/** The internal BSP node whose left/right subtrees split a from b. */
-function findCommonParent(node, aId, bId) {
-  if (node == null || typeof node === 'number') return null;
-  if (subtreeHas(node.left, aId) !== subtreeHas(node.left, bId)) return node;
-  return findCommonParent(node.left, aId, bId) ?? findCommonParent(node.right, aId, bId);
 }
 
 // pointer distance (px) from a shared boundary at which it can be grabbed
@@ -312,81 +313,98 @@ function findBorderAt(px, py) {
   return null;
 }
 
-/** Build the drag session for a grabbed boundary. */
-function borderDragSession(border) {
-  const ws = currentWorkspace();
-  const node = findCommonParent(ws.dwindleTree, border.a.id, border.b.id);
-  if (!node) return null;
-  // the split node's container spans both children plus the inner gap
-  const { a, b, axis } = border;
-  const container =
-    axis === 'v'
-      ? {
-          x: Math.min(a._lastRect.x, b._lastRect.x),
-          w: a._lastRect.w + b._lastRect.w + 2 * HALF_GAP,
-        }
-      : {
-          y: Math.min(a._lastRect.y, b._lastRect.y),
-          h: a._lastRect.h + b._lastRect.h + 2 * HALF_GAP,
-        };
-  return { type: 'border', node, axis, container };
-}
-
 /**
- * Alt+RightClick on a TILED window (amendment): quadrant-signed split
- * adjustment. The mousedown quadrant (relative to the window's center)
- * fixes the anchored corner for the gesture — the clicked tile then
- * resizes as if from that anchored corner, projected onto the split
- * axis of its parent BSP node (the split axis follows the same wide/tall
- * rule layoutDwindle uses).
+ * Build the shared drag session for resizing a TILED window. The clicked
+ * window's ancestor splits are resolved at mousedown, entirely from
+ * measured on-screen geometry:
  *
- * The sign ensures dragging AWAY from the anchored corner grows the
- * clicked tile (the sibling absorbs the difference) and dragging toward
- * it shrinks the tile — matching the floating quadrant behavior.
+ *   axisV -> the nearest vertical split (a left/right divide, wide/tall
+ *            rule as layoutDwindle) — its line follows HORIZONTAL mouse
+ *            movement
+ *   axisH -> the nearest horizontal split (a top/bottom divide) — its
+ *            line follows VERTICAL mouse movement
+ *
+ * For each engaged split the session records the split's on-screen line
+ * position (container origin + ratio * extent — the same math
+ * layoutDwindle renders with) and the window's side of that line,
+ * measured from the leaf rect ("is the leaf's left/top edge before or
+ * after the line"). During the drag the line itself follows the mouse
+ * and the ratio is re-derived from it, so the boundary direction always
+ * matches the mouse for every window and tree shape; the sibling side
+ * sharing the split adjusts inversely. A null axisV/axisH means no split
+ * of that axis exists above the window (e.g. it already spans the
+ * workspace edge) and that axis is inert.
  */
-function tileRatioDrag(win, e, rootRect) {
+function tiledSplitDrag(win, e) {
   const ws = currentWorkspace();
-  const rect = win._lastRect;
-  if (!rect) return null;
-  const px = e.clientX - rootRect.left;
-  const py = e.clientY - rootRect.top;
-  // mousedown quadrant: +1 = right/bottom half, -1 = left/top half
-  const halfX = px >= rect.x + rect.w / 2 ? 1 : -1;
-  const halfY = py >= rect.y + rect.h / 2 ? 1 : -1;
+  const leaf = win._lastRect;
+  if (!leaf) return null;
 
-  // the clicked window's parent split. The sibling side may be a single
-  // leaf or a whole subtree — its bounding rect comes from the union of
-  // the subtree's leaf rects (render-time geometry).
-  const node = findParentNode(ws.dwindleTree, win.id);
-  if (!node) return null;
-  const siblingSide = node.left === win.id ? node.right : node.left;
-  const siblingIds = typeof siblingSide === 'number' ? [siblingSide] : treeLeaves(siblingSide);
-  let sx0 = Infinity, sy0 = Infinity, sx1 = -Infinity, sy1 = -Infinity;
-  for (const id of siblingIds) {
-    const r = ws.windows.find((w) => w.id === id)?._lastRect;
-    if (!r) return null;
-    sx0 = Math.min(sx0, r.x);
-    sy0 = Math.min(sy0, r.y);
-    sx1 = Math.max(sx1, r.x + r.w);
-    sy1 = Math.max(sy1, r.y + r.h);
+  // walk root -> leaf, recording every split node above the window
+  const path = [];
+  let node = ws.dwindleTree;
+  while (node && typeof node !== 'number') {
+    path.push(node);
+    node = subtreeHas(node.left, win.id) ? node.left : node.right;
   }
-  const sibling = { x: sx0, y: sy0, w: sx1 - sx0, h: sy1 - sy0 };
-  if (!sibling.w || !sibling.h) return null;
-  const own = win._lastRect;
-  const unionW = Math.max(own.x + own.w, sibling.x + sibling.w) - Math.min(own.x, sibling.x);
-  const unionH = Math.max(own.y + own.h, sibling.y + sibling.h) - Math.min(own.y, sibling.y);
-  const axis = unionW >= unionH ? 'v' : 'h'; // same rule as layoutDwindle
-  const childSide = node.left === win.id ? 1 : -1; // +1 = left/top child
+  if (!path.length) return null; // single tiled window: nothing to split
+
+  // a split node's container = bounding rect of its subtree's leaves
+  // (render-time geometry); axis uses the same wide/tall rule layoutDwindle
+  const containerOf = (n) => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const id of treeLeaves(n)) {
+      const r = ws.windows.find((w) => w.id === id)?._lastRect;
+      if (!r) return null;
+      x0 = Math.min(x0, r.x);
+      y0 = Math.min(y0, r.y);
+      x1 = Math.max(x1, r.x + r.w);
+      y1 = Math.max(y1, r.y + r.h);
+    }
+    if (x1 <= x0 || y1 <= y0) return null;
+    const w = x1 - x0;
+    const h = y1 - y0;
+    return { x0, y0, w, h, axis: w >= h ? 'v' : 'h' };
+  };
+
+  // nearest (innermost) ancestor per axis: path runs outermost ->
+  // innermost, so scan from the end
+  let axisV = null; // vertical boundary -> follows horizontal mouse movement
+  let axisH = null; // horizontal boundary -> follows vertical mouse movement
+  for (let i = path.length - 1; i >= 0; i--) {
+    const n = path[i];
+    const c = containerOf(n);
+    if (!c) return null;
+    if (c.axis === 'v' ? axisV : axisH) continue;
+    // the split's on-screen line, measured from the rendered container
+    // and the current ratio (identical math to layoutDwindle's split)
+    const startLine = c.axis === 'v'
+      ? c.x0 + Math.round(c.w * n.ratio)
+      : c.y0 + Math.round(c.h * n.ratio);
+    // which side of the line the window renders on, measured from the
+    // leaf rect (never inferred from which tree child it is): +1 = the
+    // window is on the leading side, so its split-adjacent edge is its
+    // right/bottom edge; -1 = trailing side, its left/top edge is the line
+    const side = c.axis === 'v'
+      ? (leaf.x < startLine ? 1 : -1)
+      : (leaf.y < startLine ? 1 : -1);
+    const info = {
+      node: n,
+      side, // measured orientation of the dragged window vs the line
+      origin: c.axis === 'v' ? c.x0 : c.y0,
+      size: Math.max(1, c.axis === 'v' ? c.w : c.h),
+      startLine,
+    };
+    if (c.axis === 'v') axisV = info;
+    else axisH = info;
+  }
+  if (!axisV && !axisH) return null;
   return {
-    type: 'tileRatio',
-    node,
-    axis,
-    dir: (axis === 'v' ? halfX : halfY) * childSide,
-    startRatio: node.ratio,
-    size: Math.max(1, axis === 'v' ? unionW : unionH),
+    type: 'splitFollow',
+    axisV,
+    axisH,
     startX: e.clientX,
     startY: e.clientY,
-    apply: (ratio) => { node.ratio = ratio; },
   };
 }
 
@@ -476,13 +494,6 @@ function treeFirstLeaf(node) {
   if (node == null) return null;
   if (typeof node === 'number') return node;
   return treeFirstLeaf(node.left) ?? treeFirstLeaf(node.right);
-}
-
-/** The internal node whose direct child is the focused leaf. */
-function findParentNode(node, id) {
-  if (node == null || typeof node === 'number') return null;
-  if (node.left === id || node.right === id) return node;
-  return findParentNode(node.left, id) ?? findParentNode(node.right, id);
 }
 
 function layoutDwindle(node, rect, out) {
@@ -839,10 +850,15 @@ function bindMouse() {
       const py = e.clientY - rootRect.top;
       const border = findBorderAt(px, py);
       if (border) {
-        const session = borderDragSession(border);
+        // resize the window under the pointer exactly like Alt+RightClick
+        // would (shared split-follow session); the border is just the
+        // grab affordance. Pointer in the gap -> fall back to border.a.
+        const el = e.target.closest('.window');
+        const grabWin = (el && findWindow(Number(el.dataset.windowId))) || border.a;
+        const session = tiledSplitDrag(grabWin, e);
         if (session) {
           e.preventDefault();
-          focusWindow(border.a.id);
+          focusWindow(grabWin.id);
           activeDrag = session;
           return;
         }
@@ -896,10 +912,10 @@ function bindMouse() {
           grabY: freeY,
         };
       } else {
-        // tiled: quadrant-signed split adjustment (amendment) — the clicked
-        // tile resizes as if from its anchored (opposite) corner, projected
-        // onto the split axis; the sibling tile absorbs the difference
-        activeDrag = tileRatioDrag(win, e, rootRect);
+        // tiled: resize directly follows the mouse (amendment) — the
+        // nearest vertical/horizontal splits track the horizontal/vertical
+        // mouse axes respectively; sibling tiles adjust inversely
+        activeDrag = tiledSplitDrag(win, e);
       }
     }
   });
@@ -947,23 +963,29 @@ function onDragMove(e) {
     el.style.top = `${Math.round(top)}px`;
     el.style.width = `${Math.round(w)}px`;
     el.style.height = `${Math.round(h)}px`;
-  } else if (activeDrag.type === 'border') {
-    // direct border drag: the shared boundary follows the pointer, both
-    // facing edges reflow together (same split model the mouse border
-    // drag uses)
-    const { node, container, axis } = activeDrag;
-    const rootRect = workspaceRoot.getBoundingClientRect();
-    const pointer = axis === 'v' ? e.clientX - rootRect.left : e.clientY - rootRect.top;
-    const base = axis === 'v' ? container.x : container.y;
-    const size = axis === 'v' ? container.w : container.h;
-    node.ratio = clamp((pointer - base) / Math.max(1, size), MIN_SPLIT_RATIO, MAX_SPLIT_RATIO);
-    render();
-  } else if (activeDrag.type === 'tileRatio') {
-    // Alt+RightClick on a tiled window: the mousedown quadrant fixed the
-    // anchor corner; the drag adjusts the bounding split in that direction
-    const { axis, dir, startRatio, size, startX, startY, apply } = activeDrag;
-    const d = axis === 'v' ? e.clientX - startX : e.clientY - startY;
-    apply(clamp(startRatio + (dir * d) / Math.max(1, size), MIN_SPLIT_RATIO, MAX_SPLIT_RATIO));
+  } else if (activeDrag.type === 'splitFollow') {
+    // The split line (the dragged window's shared boundary) follows the
+    // mouse 1:1 along its axis and the sibling side adjusts inversely.
+    // The line was measured from the rendered rects at mousedown, so the
+    // direction always matches the mouse regardless of tree shape; the
+    // ratio is re-derived from the moved line (and clamped) each frame.
+    const { axisV, axisH, startX, startY } = activeDrag;
+    if (axisV) {
+      const line = axisV.startLine + (e.clientX - startX);
+      axisV.node.ratio = clamp(
+        (line - axisV.origin) / axisV.size,
+        MIN_SPLIT_RATIO,
+        MAX_SPLIT_RATIO
+      );
+    }
+    if (axisH) {
+      const line = axisH.startLine + (e.clientY - startY);
+      axisH.node.ratio = clamp(
+        (line - axisH.origin) / axisH.size,
+        MIN_SPLIT_RATIO,
+        MAX_SPLIT_RATIO
+      );
+    }
     render();
   }
 }
@@ -994,8 +1016,8 @@ function onDragEnd(e) {
         swapWindows(drag.win.id, target.id);
       }
     }
-  } else if (drag.type === 'border' || drag.type === 'tileRatio') {
-    persistState(); // ratio was committed live during move; save the final value
+  } else if (drag.type === 'splitFollow') {
+    persistState(); // ratios were committed live during move; save the final values
   }
 }
 

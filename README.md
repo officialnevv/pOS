@@ -41,7 +41,7 @@ All of these call `preventDefault()` so the browser doesn't eat them.
 
 ## Mouse
 
-Mouse support exists but it's the convenience layer, not the point. Hovering a window focuses it. `Alt + Left-Click` drag moves a floating window, or swaps a tiled window with whatever you drop it on. `Alt + Right-Click` drag resizes a floating window, or adjusts the dwindle split on a tiled one. Everything else, launcher, theme picker, checking things off inside modules, works with plain clicks.
+Mouse support exists but it's the convenience layer, not the point. Hovering a window focuses it. `Alt + Left-Click` drag moves a floating window, or swaps a tiled window with whatever you drop it on. `Alt + Right-Click` drag resizes a floating window (opposite corner anchored), or resizes a tiled one by following the mouse: horizontal movement drives the vertical split, vertical movement the horizontal split, diagonal movement both at once. Plain left-click on the shared border between two tiles resizes a tiled window the same way. Everything else, launcher, theme picker, checking things off inside modules, works with plain clicks.
 
 ## What's in it
 
