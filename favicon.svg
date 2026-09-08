@@ -5,6 +5,10 @@
     not apply, so wm-core.js re-renders this via <canvas> at runtime once
     the Nerd Font has loaded (see initFavicon) — this file is the
     no-JS/degraded fallback.
+
+    Neutral mid-gray on a transparent background: the favicon cannot
+    re-theme itself, and mid-gray stays visible on both light and dark
+    browser tab bars without clashing with the active theme.
   -->
   <style>
     @font-face {
@@ -12,7 +16,6 @@
       src: url("assets/fonts/nerd-font-symbols.woff2") format("woff2");
     }
   </style>
-  <rect width="32" height="32" fill="#2d353b"/>
   <text x="16" y="24" font-family="Symbols Nerd Font" font-size="22"
-        fill="#a7c080" text-anchor="middle">&#xf4ca;</text>
+        fill="#8c8c8c" text-anchor="middle">&#xf4ca;</text>
 </svg>

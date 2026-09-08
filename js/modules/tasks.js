@@ -15,8 +15,8 @@ import { registerModule } from '../modules.js';
 
 const TASKS_ICON = '\uf14a';  // Nerd Font check-square
 const CHECK_GLYPH = '\uf00c'; // Nerd Font check, drawn inside the checkbox
-const CARET_DOWN = '\uf0d7';
-const CARET_UP = '\uf077';
+const CARET_DOWN = '\uf0d7'; // nf-fa-caret_down
+const CARET_UP = '\uf0d8';   // nf-fa-caret_up
 const PRIORITIES = ['none', 'low', 'medium', 'high'];
 
 // Tolerate old/partial saved entries: missing fields default to no due
@@ -153,7 +153,16 @@ function mount(container, context) {
       prio.textContent = item.priority;
       meta.appendChild(prio);
     }
-    main.append(text, meta);
+    main.append(text);
+    // description stays visible in the list view (amendment #3): render it
+    // only when non-empty, so tasks without one get no empty line
+    if (item.description) {
+      const desc = document.createElement('p');
+      desc.className = 'task-desc';
+      desc.textContent = item.description;
+      main.append(desc);
+    }
+    main.append(meta);
 
     const expand = document.createElement('button');
     expand.type = 'button';

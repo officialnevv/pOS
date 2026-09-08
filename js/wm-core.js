@@ -60,8 +60,9 @@ function startClock() {
 // favicons render where document fonts may not apply. Once the font is
 // loaded, redraw the glyph onto a canvas and swap in a PNG data URL.
 const FAVICON_GLYPH = '\uf4ca'; // nf-oct-feed_person
-const FAVICON_BG = '#2d353b';
-const FAVICON_FG = '#a7c080';
+// Neutral mid-gray on transparent: the favicon can't re-theme itself, and
+// mid-gray stays legible on both light and dark browser tab bars.
+const FAVICON_FG = '#8c8c8c';
 
 function renderFavicon() {
   const canvas = document.createElement('canvas');
@@ -69,8 +70,7 @@ function renderFavicon() {
   canvas.height = 64;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  ctx.fillStyle = FAVICON_BG;
-  ctx.fillRect(0, 0, 64, 64);
+  ctx.clearRect(0, 0, 64, 64); // transparent background
   ctx.fillStyle = FAVICON_FG;
   ctx.font = '48px "Symbols Nerd Font"';
   ctx.textAlign = 'center';

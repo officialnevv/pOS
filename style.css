@@ -595,6 +595,17 @@ body {
   white-space: nowrap;
 }
 
+/* description visible at a glance in the list view, under the title
+   (omitted entirely for tasks without one) */
+.task-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-wrap; /* keep the user's line breaks */
+  overflow-wrap: anywhere;
+  opacity: 0.75;
+}
+
 .task-meta {
   display: flex;
   gap: 6px;
@@ -628,6 +639,16 @@ body {
   cursor: pointer;
   padding: 0 4px;
   flex: none;
+}
+
+/* the expand/collapse button draws a Nerd Font caret (nf-fa-caret_down
+   \f0d7 / caret_up \f0d8 per the official cheat sheet). The `font:
+   inherit` shorthand above resets font-family to the UI font, which has
+   no glyph coverage (renders as a tofu box), so re-apply the icon font. */
+.task-expand {
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 13px;
+  line-height: 1;
 }
 
 .task-expand:hover,
