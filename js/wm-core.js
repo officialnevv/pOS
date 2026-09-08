@@ -43,6 +43,7 @@ import './persistence.js';
 import './modules.js';
 import './modules/tasks.js';
 import './modules/storage.js';
+import './modules/watch-later.js';
 
 // Registry/theme/persistence APIs. The WM is a generic shell: it only
 // ever talks to the module *registry*, never to specific modules
@@ -318,9 +319,9 @@ function switchWorkspace(n) {
   render();
 }
 
-/** Alt+Shift+1..9 (Spec §10 amendment): move the focused window to
- * workspace n. The *window* moves; the view stays on the current
- * workspace (i3-style send-to-workspace). */
+/** Alt+Shift+1..9 (Spec §10, amended): move the focused window to
+ * workspace n. The view follows: you land on the target workspace
+ * with the moved window focused there. */
 function moveFocusedToWorkspace(id, targetIdx) {
   const from = currentWorkspace();
   const to = state.workspaces[clamp(targetIdx, 0, WORKSPACE_COUNT - 1)];
@@ -338,10 +339,10 @@ function moveFocusedToWorkspace(id, targetIdx) {
       win.id
     );
   }
-  // refocus whatever is left behind (or nothing if the source emptied)
-  focusedWindowId = from.windows.length
-    ? from.windows[from.windows.length - 1].id
-    : null;
+  // view FOLLOWS the moved window (amendment #2): land on the target
+  // workspace with the moved window focused there
+  state.activeWorkspace = clamp(targetIdx, 0, WORKSPACE_COUNT - 1);
+  focusedWindowId = win.id;
   persistState();
   render(); // pill slot 4-9 visibility may change on either side
 }

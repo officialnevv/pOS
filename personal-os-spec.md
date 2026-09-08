@@ -161,6 +161,13 @@ Adding a new module later should require **zero changes** to the window manager 
 - Basic add/remove item functionality.
 - Should persist its own data (see Section 9).
 
+### Watch Later
+- Site-agnostic saved-video-links list (YouTube, Vimeo, or any URL).
+- Paste a URL + add; each entry shows a clickable link (opens in a new tab) and a title.
+- Title auto-detection **only for YouTube links** via YouTube's public oEmbed endpoint (`https://www.youtube.com/oembed?url=...&format=json` — no API key). Non-YouTube URLs are never scraped (CORS, no backend): they show the raw URL until a title is typed manually.
+- Each entry has a watched toggle (watched entries render dimmed/strikethrough) and can be removed.
+- Persists `{ url, title, watched }` entries under `moduleData.watchLater` (Section 9).
+
 ---
 
 ## 9. Persistence
@@ -210,7 +217,7 @@ All state persists in `localStorage` under a **single JSON key** (e.g. `personal
 | `Alt + Q` | Close focused window |
 | `Alt + Enter` | Open module launcher |
 | `Alt + 1` – `Alt + 9` | Switch to workspace 1–9 |
-| `Alt + Shift + 1` – `Alt + Shift + 9` | Move the focused window to workspace 1–9 (the view stays on the current workspace) |
+| `Alt + Shift + 1` – `Alt + Shift + 9` | Move the focused window to workspace 1–9 (the view follows: you land on the target workspace with the moved window focused) |
 
 **Note for implementer:** `Alt` combos can trigger browser/OS menu behavior in some browsers — make sure to call `event.preventDefault()` on all of these at the `keydown` listener level. `Alt+RightClick` drag will also need `event.preventDefault()` on `contextmenu` to suppress the native right-click menu during resize drags.
 

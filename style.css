@@ -146,8 +146,11 @@ body {
 #empty-workspace-hint {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  /* flex (not grid): keeps the kbd box and the text node on ONE row —
+     grid stacks each child (incl. the anonymous text node) vertically */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--color-border);
   letter-spacing: 0.08em;
   user-select: none;
@@ -723,6 +726,115 @@ body {
 }
 
 .storage-empty {
+  padding: 16px 12px;
+  color: var(--color-border);
+  text-align: center;
+}
+/* ---------------------------------------------------------------
+   Watch Later module — saved-video-links list (Spec §8, amended).
+   Data persists under moduleData.watchLater (Spec §9).
+   --------------------------------------------------------------- */
+.wl-add {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.wl-add input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  border-radius: 0;
+}
+
+.wl-add input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.wl-add button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.wl-add button:hover {
+  border-color: var(--color-accent);
+}
+
+.wl-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.wl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+}
+
+.wl-row:hover {
+  background: color-mix(in srgb, var(--color-border) 30%, transparent);
+}
+
+.wl-row input[type='checkbox'] {
+  accent-color: var(--color-accent);
+  flex: none;
+}
+
+.wl-link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-fg);
+  text-decoration: none;
+}
+
+.wl-link:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+/* watched entries: dimmed + struck through */
+.wl-row.watched .wl-link {
+  color: var(--color-border);
+  text-decoration: line-through;
+}
+
+.wl-action {
+  background: transparent;
+  border: 2px solid transparent;
+  color: var(--color-border);
+  font: inherit;
+  padding: 0 4px;
+  cursor: pointer;
+  border-radius: 0;
+  flex: none;
+}
+
+.wl-action:hover {
+  color: var(--color-accent);
+  border-color: var(--color-border);
+}
+
+.wl-empty {
   padding: 16px 12px;
   color: var(--color-border);
   text-align: center;
