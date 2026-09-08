@@ -7,24 +7,24 @@
  * var(--color-*) and switching is instant.
  *
  * Sections:
- *   1. Fonts (self-hosted Geist Mono + JetBrains Mono)
+ *   1. Fonts (self-hosted Geist Mono + JetBrains Mono + Nerd Font)
  *   2. Theme variable definitions (fallback defaults; live values set
  *      by js/themes.js on the root element)
  *   3. Reset / base (sharp corners everywhere: border-radius: 0)
  *   4. Top bar (fixed, three zones: name / date / time)
- *   5. Workspace root + empty-state hint          (WM phase)
- *   6. Windows (2px solid border, no chrome)      (WM phase)
- *   7. Tiling layouts (master-stack + dwindle)    (WM phase)
- *   8. Workspace indicator pill                   (WM phase)
- *   9. Module launcher popup                      (WM phase)
- *  10. Theme picker popup                         (WM phase)
- *  11. Lock screen overlay                        (WM phase)
- *  12. Tasks module styles                        (WM phase)
+ *   5. Workspace root + empty-state hint
+ *   6. Windows (2px solid border, no chrome)
+ *   7. Tiling layouts (master-stack + dwindle)
+ *   8. Workspace indicator pill
+ *   9. Module launcher popup
+ *  10. Theme picker popup
+ *  11. Lock screen overlay
+ *  (Module-specific styles live with each module's own CSS — none are
+ *   installed; the module registry is currently empty.)
  */
 
 /* ---------------------------------------------------------------
    1. Fonts — self-hosted woff2 (latin subset) for offline use.
-      Nerd Font glyphs for module icons will be added later.
    --------------------------------------------------------------- */
 @font-face {
   font-family: "Geist Mono";
@@ -227,104 +227,6 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   Tasks module
-   --------------------------------------------------------------- */
-.tasks {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.tasks-add {
-  display: flex;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.tasks-add input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-fg);
-  font: inherit;
-  padding: 4px 8px;
-  border-radius: 0;
-}
-
-.tasks-add input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.tasks-add button {
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-accent);
-  font: inherit;
-  font-weight: 700;
-  padding: 4px 10px;
-  cursor: pointer;
-  border-radius: 0;
-}
-
-.tasks-add button:hover {
-  border-color: var(--color-accent);
-}
-
-.tasks-list {
-  flex: 1;
-  overflow-y: auto;
-  list-style: none;
-  margin: 0;
-  padding: 4px 0;
-}
-
-.task-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 12px;
-}
-
-.task-item + .task-item {
-  border-top: 1px solid var(--color-border);
-}
-
-.task-item input[type='checkbox'] {
-  accent-color: var(--color-accent);
-  width: 14px;
-  height: 14px;
-  cursor: pointer;
-}
-
-.task-text {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.task-item.done .task-text {
-  text-decoration: line-through;
-  color: var(--color-border);
-}
-
-.task-remove {
-  background: none;
-  border: none;
-  color: var(--color-border);
-  font: inherit;
-  cursor: pointer;
-  padding: 0 4px;
-}
-
-.task-remove:hover {
-  color: var(--color-accent-secondary);
-}
-
-/* ---------------------------------------------------------------
    8. Workspace indicator pill (Spec §3): floating, bottom-centered;
    slots 1-3 always, 4-9 only while populated; layout + theme icons.
    --------------------------------------------------------------- */
@@ -349,6 +251,13 @@ body {
   color: var(--color-border);
   cursor: pointer;
   padding: 0 6px;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+/* click feedback: quick scale/opacity pulse while pressed (amendment #1) */
+.pill-icon:active {
+  transform: scale(0.8);
+  opacity: 0.6;
 }
 
 /* the two edge icons sit closer to the pill's outer edges (amendment) */
@@ -582,269 +491,4 @@ body {
 
 .lock-box.shake {
   animation: lock-shake 0.3s;
-}
-
-/* ---------------------------------------------------------------
-   12. Remaining sections (none) — roadmap complete except WM-state
-   persistence (Spec §9), which lands with a later phase.
-   --------------------------------------------------------------- */
-
-/* ---------------------------------------------------------------
-   Storage module — local file/folder manager (client-only; contents
-   persist as data URLs under moduleData.storage, Spec §8/§9).
-   --------------------------------------------------------------- */
-.storage {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-}
-
-.storage-toolbar {
-  display: flex;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.storage-btn {
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-accent);
-  font: inherit;
-  font-weight: 700;
-  padding: 4px 10px;
-  cursor: pointer;
-  border-radius: 0;
-}
-
-.storage-btn:hover {
-  border-color: var(--color-accent);
-}
-
-.storage-breadcrumb {
-  padding: 8px 12px;
-  border-bottom: 2px solid var(--color-border);
-  color: var(--color-border);
-  user-select: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.storage-crumb {
-  cursor: pointer;
-  color: var(--color-fg);
-  opacity: 0.75;
-}
-
-.storage-crumb:hover {
-  opacity: 1;
-  text-decoration: underline;
-}
-
-.storage-crumb.current {
-  color: var(--color-accent);
-  font-weight: 700;
-  opacity: 1;
-}
-
-.storage-sep {
-  margin: 0 6px;
-}
-
-.storage-warning {
-  padding: 6px 12px;
-  font-size: 12px;
-  color: var(--color-accent);
-  border-bottom: 2px solid var(--color-border);
-}
-
-.storage-warning.error {
-  color: var(--color-accent-secondary);
-}
-
-.storage-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  list-style: none;
-  margin: 0;
-  padding: 4px 0;
-}
-
-.storage-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-}
-
-.storage-row:hover {
-  background: color-mix(in srgb, var(--color-border) 30%, transparent);
-}
-
-.storage-row-icon {
-  font-family: "Symbols Nerd Font", monospace;
-  font-size: 14px;
-  color: var(--color-accent);
-  width: 18px;
-  text-align: center;
-  flex: none;
-}
-
-.storage-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.storage-name:hover {
-  color: var(--color-accent);
-  text-decoration: underline;
-}
-
-.storage-meta {
-  flex: none;
-  font-size: 12px;
-  color: var(--color-border);
-}
-
-.storage-actions {
-  flex: none;
-  display: flex;
-  gap: 4px;
-}
-
-.storage-action {
-  background: transparent;
-  border: 2px solid transparent;
-  color: var(--color-border);
-  font: inherit;
-  padding: 0 4px;
-  cursor: pointer;
-  border-radius: 0;
-}
-
-.storage-action:hover {
-  color: var(--color-accent);
-  border-color: var(--color-border);
-}
-
-.storage-empty {
-  padding: 16px 12px;
-  color: var(--color-border);
-  text-align: center;
-}
-/* ---------------------------------------------------------------
-   Watch Later module — saved-video-links list (Spec §8, amended).
-   Data persists under moduleData.watchLater (Spec §9).
-   --------------------------------------------------------------- */
-.wl-add {
-  display: flex;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.wl-add input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-fg);
-  font: inherit;
-  padding: 4px 8px;
-  border-radius: 0;
-}
-
-.wl-add input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.wl-add button {
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-accent);
-  font: inherit;
-  font-weight: 700;
-  padding: 4px 10px;
-  cursor: pointer;
-  border-radius: 0;
-}
-
-.wl-add button:hover {
-  border-color: var(--color-accent);
-}
-
-.wl-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  list-style: none;
-  margin: 0;
-  padding: 4px 0;
-}
-
-.wl-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-}
-
-.wl-row:hover {
-  background: color-mix(in srgb, var(--color-border) 30%, transparent);
-}
-
-.wl-row input[type='checkbox'] {
-  accent-color: var(--color-accent);
-  flex: none;
-}
-
-.wl-link {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--color-fg);
-  text-decoration: none;
-}
-
-.wl-link:hover {
-  color: var(--color-accent);
-  text-decoration: underline;
-}
-
-/* watched entries: dimmed + struck through */
-.wl-row.watched .wl-link {
-  color: var(--color-border);
-  text-decoration: line-through;
-}
-
-.wl-action {
-  background: transparent;
-  border: 2px solid transparent;
-  color: var(--color-border);
-  font: inherit;
-  padding: 0 4px;
-  cursor: pointer;
-  border-radius: 0;
-  flex: none;
-}
-
-.wl-action:hover {
-  color: var(--color-accent);
-  border-color: var(--color-border);
-}
-
-.wl-empty {
-  padding: 16px 12px;
-  color: var(--color-border);
-  text-align: center;
 }

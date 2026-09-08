@@ -14,8 +14,9 @@
  *   - Workspace state: 9 workspaces, each with its own windows,
  *     layoutMode (master-stack / dwindle), masterRatio + dwindle BSP
  *     tree; Alt+1..9 switching; workspace indicator pill (Spec §3).
- *   - Master-stack tiling (55/45 default, live-adjustable), new
- *     windows spawn as master (Spec §4).
+ *   - Tiling layouts: dwindle BSP (default for new workspaces) and
+ *     master-stack (55/45, live-adjustable), toggleable per workspace
+ *     via the pill icon (Spec §4).
  *   - Window lifecycle: open/close (Alt+Q), promote to master
  *     (Alt+W), toggle floating (Alt+V, detaches in place), fullscreen
  *     overlay (Alt+F).
@@ -530,7 +531,7 @@ function render() {
     // keybind portion rendered as a small bordered <kbd>-style box
     const kbd = document.createElement('span');
     kbd.className = 'kbd';
-    kbd.textContent = 'Alt+Enter';
+    kbd.textContent = 'alt+enter';
     hint.append(kbd, ' to launch a module');
     workspaceRoot.appendChild(hint);
     renderPill();
@@ -586,6 +587,11 @@ function render() {
   for (const win of ws.windows) {
     const entry = windowEls.get(win.id) ?? createWindowEl(win);
     const el = entry.el;
+
+    // drop stale state classes first: elements are cached across renders,
+    // so a window that stopped being floating/fullscreen/focused must not
+    // keep its old class (re-added below when still applicable)
+    el.classList.remove('fullscreen', 'floating', 'focused');
 
     if (win.isFullscreen) {
       el.classList.add('fullscreen');
@@ -894,8 +900,11 @@ function onDragEnd(e) {
 
 /* ---------- workspace indicator pill (Spec §3) ---------- */
 
-const ICON_LAYOUT = '\uf0db'; // Nerd Font "columns" glyph
-const ICON_THEME = '\uf042';  // Nerd Font "adjust" glyph (half-filled circle)
+// Layout icons reflect the workspace's active mode (amendment #1):
+// "columns" (vertical split) = master-stack, "th-large" (4-pane grid) = dwindle.
+const ICON_LAYOUT_MASTER = '\uf0db';  // Nerd Font "columns" glyph
+const ICON_LAYOUT_DWINDLE = '\uf009'; // Nerd Font "th-large" glyph
+const ICON_THEME = '\uf042';          // Nerd Font "adjust" glyph (half-filled circle)
 
 function renderPill() {
   const pill = document.getElementById('workspace-pill');
@@ -904,10 +913,13 @@ function renderPill() {
 
   // icons flank the numbers: layout toggle left, theme toggle right
   // (Spec §3 amendment — numbers in the middle, one icon per side)
+  const ws = currentWorkspace();
   const layoutBtn = document.createElement('span');
   layoutBtn.className = 'pill-icon';
-  layoutBtn.textContent = ICON_LAYOUT;
-  layoutBtn.title = 'toggle layout (master-stack / dwindle)';
+  // icon mirrors the ACTIVE layout; render() after toggleLayout swaps it
+  layoutBtn.textContent =
+    ws.layoutMode === 'dwindle' ? ICON_LAYOUT_DWINDLE : ICON_LAYOUT_MASTER;
+  layoutBtn.title = `layout: ${ws.layoutMode} — click to toggle`;
   layoutBtn.addEventListener('click', toggleLayout);
 
   const themeBtn = document.createElement('span');
@@ -1127,8 +1139,6 @@ function init() {
 
   render(); // initial paint: empty-workspace hint + pill
 }
-
-
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);

@@ -4,8 +4,9 @@
  * Central module registry (Spec §8).
  *
  * The window manager core knows nothing about individual modules — it
- * only talks to this registry. Every module (e.g. js/modules/tasks.js)
- * registers itself here at import time by calling registerModule() with:
+ * only talks to this registry. Every module (a self-contained file
+ * under js/modules/) registers itself here at import time by calling
+ * registerModule() with:
  *
  *   {
  *     id:        unique string, used for singleton lookup + persistence key,

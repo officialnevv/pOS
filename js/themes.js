@@ -3,18 +3,14 @@
  * ----------------------------------------------------------------------
  * Theme definitions and switching (Spec §6).
  *
- * Will eventually contain:
- *   - THEMES: an append-only registry of theme objects. Each theme has:
- *       { id, name, colors: { bg, fg, accent, border, accentSecondary } }
- *     shipped themes: Everforest (default), Gruvbox, Nord, Dracula,
- *     Catppuccin Mocha, Solarized Dark/Light, Tokyo Night, One Dark,
- *     Rosé Pine, Monokai.
- *   - applyTheme(id): writes the theme's colors as CSS custom properties
- *     onto the root (or toggles a data-theme attribute) so all styling
- *     via var(--color-*) updates instantly.
- *   - getTheme(id) / getAllThemes() helpers for the theme picker popup.
- *
- * Adding a new theme = appending one entry here. No other file changes.
+ * THEMES is an append-only registry — structured like the module
+ * registry: adding a theme = appending one entry here, no other file
+ * changes. Each theme defines the 5 core colors:
+ *   bg (background), fg (text), accent, border (focus-highlight),
+ *   accentSecondary.
+ * All values are the canonical, well-documented palette colors for
+ * each scheme. applyTheme() writes them as CSS custom properties onto
+ * the root element so all var(--color-*) styling updates instantly.
  */
 
 /** Default theme used on first load and as a fallback. */

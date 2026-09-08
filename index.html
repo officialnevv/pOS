@@ -6,9 +6,9 @@
   <title>pOS</title>
 
   <!--
-    Fonts & Icons (to be wired up later):
-    - Geist Mono / JetBrains Mono (self-hosted or CDN)
-    - Nerd Font glyphs for module icons
+    Fonts & Icons (self-hosted in assets/fonts/, offline-capable):
+    - Geist Mono / JetBrains Mono
+    - Nerd Font glyphs for module + pill icons
   -->
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -16,8 +16,8 @@
 
   <!-- ============================================================
        Lock Screen overlay (Spec §12)
-       Shown on page load; PIN-gated, purely client-side.
-       To be rendered/managed by JS (lock screen logic TBD).
+       Rendered/managed by js/lockscreen.js; shown on page load,
+       PIN-gated (auto-unlock + fade), purely client-side.
        ============================================================ -->
   <!-- <div id="lock-screen"> ... </div> -->
 
@@ -68,8 +68,9 @@
 
   <!--
     Entry point. wm-core.js is the app bootstrap: it imports the
-    module registry, individual modules, themes, and persistence,
-    then initializes the window manager.
+    module registry, themes, persistence, and the lock screen, then
+    initializes the window manager. Modules (when any are installed)
+    register themselves via side-effect imports in wm-core.js.
   -->
   <script type="module" src="js/wm-core.js"></script>
 </body>
