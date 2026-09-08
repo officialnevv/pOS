@@ -77,6 +77,10 @@ function mount(container) {
   breakInput.min = String(MIN_MINUTES);
   breakInput.max = String(MAX_MINUTES);
   breakInput.step = '1';
+  // both fields must show their current duration from the start — without
+  // an explicit value they render empty (number inputs have no default)
+  workInput.value = String(workMin);
+  breakInput.value = String(breakMin);
   config.append(workLabel, workInput, breakLabel, breakInput);
 
   container.append(title, timeEl, phaseEl, controls, config);
@@ -157,6 +161,14 @@ function mount(container) {
       remaining = durationSec();
       renderTime();
     }
+  });
+  // once editing is done (blur/Enter), snap the visible field to the
+  // parsed value so clamped entries (e.g. "0" -> 1) don't linger
+  workInput.addEventListener('change', () => {
+    workInput.value = String(workMin);
+  });
+  breakInput.addEventListener('change', () => {
+    breakInput.value = String(breakMin);
   });
 
   teardown = () => stopTimer();
