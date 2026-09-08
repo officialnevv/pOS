@@ -882,3 +882,250 @@ body {
   place-items: center;
   color: var(--color-border);
 }
+
+/* ---------------------------------------------------------------
+   Pomodoro module — live focus timer (Spec §8, amendment). Not
+   persisted: session-only state, resets on page load.
+   --------------------------------------------------------------- */
+.pomodoro {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+}
+
+.pomodoro-time {
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* visual cue when the timer switches work <-> break on its own */
+.pomodoro-time.flash {
+  animation: pomodoro-flash 0.8s ease;
+}
+
+@keyframes pomodoro-flash {
+  0%, 100% { color: var(--color-fg); }
+  40% { color: var(--color-accent); transform: scale(1.06); }
+}
+
+.pomodoro-phase {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.pomodoro-phase.work {
+  color: var(--color-accent);
+}
+
+.pomodoro-phase.break {
+  color: var(--color-accent-secondary);
+}
+
+.pomodoro-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.pomodoro-btn {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 4px 14px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.pomodoro-btn:hover {
+  border-color: var(--color-accent);
+}
+
+.pomodoro-config {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-border);
+  margin-top: 6px;
+}
+
+.pomodoro-config input {
+  width: 56px;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 2px 6px;
+  border-radius: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pomodoro-config input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+/* ---------------------------------------------------------------
+   Weather module — saved city + Open-Meteo forecast (Spec §8,
+   amendment). City persists under moduleData.weather (Spec §9);
+   the last forecast is cached with a timestamp (~30 min TTL).
+   --------------------------------------------------------------- */
+.weather {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  overflow-y: auto;
+}
+
+.weather-form {
+  display: flex;
+  gap: 8px;
+}
+
+.weather-form input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  border-radius: 0;
+}
+
+.weather-form input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.weather-form button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.weather-form button:hover {
+  border-color: var(--color-accent);
+}
+
+.weather-error {
+  color: var(--color-accent-secondary);
+  font-size: 12px;
+  min-height: 0;
+}
+
+.weather-error:empty {
+  display: none;
+}
+
+.weather-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.weather-place {
+  font-weight: 700;
+}
+
+/* change-city affordance: Nerd Font pencil — the explicit icon font
+   matters here (`font: inherit` elsewhere resets to the UI font) */
+.weather-edit {
+  background: none;
+  border: none;
+  color: var(--color-border);
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.weather-edit:hover {
+  color: var(--color-accent);
+}
+
+.weather-stamp {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-border);
+}
+
+.weather-current {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.weather-icon {
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.weather-temp {
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.weather-cond {
+  color: var(--color-border);
+  font-size: 13px;
+}
+
+.weather-days {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 0;
+  border-top: 2px solid var(--color-border);
+}
+
+.weather-day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.weather-day-name {
+  width: 42px;
+  color: var(--color-border);
+}
+
+.weather-day-icon {
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 14px;
+  color: var(--color-accent);
+  width: 18px;
+  text-align: center;
+}
+
+.weather-day-temps {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.weather-day-temps .min {
+  color: var(--color-border);
+}
