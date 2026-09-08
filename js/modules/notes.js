@@ -8,8 +8,9 @@
  * only ever sees it through the registry. A small sidebar lists the
  * notes, the rest of the window is an inline editor (title input + body
  * textarea) with a preview toggle that renders the body's markdown.
- * Data persists as an array of { title, body } under the module's own
- * moduleData.notes slice (Spec §9); the stored body is always the raw
+ * Data persists under the module's own moduleData.notes slice (Spec §9)
+ * as { notes: [{ title, body }…], sidebarWidth } — legacy bare-array
+ * slices are normalized on load. The stored body is always the raw
  * markdown source — rendering is display-only.
  */
 
@@ -160,12 +161,34 @@ function renderMarkdown(source) {
   return out.join('\n');
 }
 
+// Sidebar width: remembered in the slice, clamped to these bounds
+// (120px keeps tab titles readable; the upper bound is half the window).
+const SIDEBAR_DEFAULT = 150;
+const SIDEBAR_MIN = 120;
+
+// The slice used to be a bare notes array; wrap legacy data and tolerate
+// partial saves (same spirit as Tasks' normalize).
+function normalize(data) {
+  const notes = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.notes)
+      ? data.notes
+      : [];
+  const sidebarWidth =
+    typeof data?.sidebarWidth === 'number' ? data.sidebarWidth : SIDEBAR_DEFAULT;
+  return { notes, sidebarWidth };
+}
+
 function mount(container, context) {
-  let notes = context.load() ?? [];
-  if (!Array.isArray(notes)) notes = [];
+  const loaded = normalize(context.load());
+  let notes = loaded.notes;
+  const maxSidebar = () =>
+    Math.max(SIDEBAR_MIN, Math.floor(container.clientWidth / 2));
+  // remembered width, clamped against the window it's opening in
+  let sidebarWidth = Math.min(Math.max(loaded.sidebarWidth, SIDEBAR_MIN), maxSidebar());
   let selected = notes.length ? 0 : -1; // index into notes, -1 = none
 
-  const persist = () => context.persist(notes);
+  const persist = () => context.persist({ notes, sidebarWidth });
   const current = () => notes[selected] ?? null;
 
   // view mode of the note being looked at: false = raw textarea,
@@ -182,17 +205,27 @@ function mount(container, context) {
   titleName.textContent = 'Notes';
   title.append(titleIcon, titleName);
 
-  // sidebar: note list + add button
+  // sidebar: always-visible new-note row (title input + add button) on
+  // top of the note list; the resize handle is anchored inside the
+  // editor column because the sidebar clips its own overflow
   const sidebar = document.createElement('div');
   sidebar.className = 'notes-sidebar';
+  sidebar.style.width = `${sidebarWidth}px`;
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'notes-name-input';
+  nameInput.placeholder = 'note title…';
   const addBtn = document.createElement('button');
   addBtn.type = 'button';
   addBtn.className = 'notes-add';
   addBtn.textContent = '+';
-  addBtn.title = 'new note';
+  addBtn.title = 'add note';
+  const newNoteRow = document.createElement('div');
+  newNoteRow.className = 'notes-new';
+  newNoteRow.append(nameInput, addBtn);
   const tabs = document.createElement('ul');
   tabs.className = 'notes-tabs';
-  sidebar.append(addBtn, tabs);
+  sidebar.append(newNoteRow, tabs);
 
   // editor: title row (title input + preview toggle) + body, edited in
   // place; preview mode swaps the textarea for the rendered markdown
@@ -217,7 +250,10 @@ function mount(container, context) {
   const editorEmpty = document.createElement('div');
   editorEmpty.className = 'notes-empty';
   editorEmpty.textContent = 'no notes — add one with +';
-  editor.append(titleRow, bodyEl, previewEl, editorEmpty);
+  // drag handle straddling the sidebar/editor border (col-resize)
+  const resizeHandle = document.createElement('div');
+  resizeHandle.className = 'notes-resize';
+  editor.append(titleRow, bodyEl, previewEl, editorEmpty, resizeHandle);
 
   // sidebar + editor live in a row wrapper below the title
   const body = document.createElement('div');
@@ -227,11 +263,40 @@ function mount(container, context) {
   container.append(title, body);
 
   /* ---- events ---- */
-  addBtn.addEventListener('click', () => {
-    notes.push({ title: '', body: '' });
+  // enter in the title input or a + click creates the note; an empty
+  // title falls back to "untitled"; the input clears but stays visible
+  const createNote = () => {
+    notes.push({ title: nameInput.value.trim() || 'untitled', body: '' });
     selected = notes.length - 1;
+    nameInput.value = '';
     persist();
     render();
+  };
+
+  addBtn.addEventListener('click', createNote);
+  nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') createNote();
+  });
+
+  // drag the sidebar's right edge to resize it (width persisted on release)
+  resizeHandle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+    const onMove = (ev) => {
+      sidebarWidth = Math.max(
+        SIDEBAR_MIN,
+        Math.min(startWidth + ev.clientX - startX, maxSidebar())
+      );
+      sidebar.style.width = `${sidebarWidth}px`;
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      persist();
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
   });
 
   titleInput.addEventListener('input', () => {

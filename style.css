@@ -780,7 +780,10 @@ body {
   min-height: 0;
 }
 
+/* sidebar: width is set inline by the module (persisted, clamped);
+   150px here is only the pre-mount fallback */
 .notes-sidebar {
+  position: relative;
   width: 150px;
   flex: none;
   border-right: 2px solid var(--color-border);
@@ -790,17 +793,60 @@ body {
   overflow: hidden;
 }
 
-.notes-add {
+/* drag handle straddling the sidebar's right border; anchored to the
+   editor column (which clips nothing and is position: relative) so it
+   sits on the INTERNAL sidebar/editor divider — never on the WM's outer
+   window-border grab zones */
+.notes-resize {
+  position: absolute;
+  top: 0;
+  left: -5px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+.notes-resize:hover {
+  background: color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+/* new-note row: always-visible title input + add button */
+.notes-new {
+  display: flex;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.notes-name-input {
+  flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
-  border-bottom: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  font-size: 12px;
+  padding: 8px;
+  border-radius: 0;
+}
+
+.notes-name-input:focus {
+  outline: none;
+}
+
+.notes-name-input::placeholder {
+  color: var(--color-border);
+}
+
+.notes-add {
+  flex: none;
+  background: transparent;
+  border: none;
+  border-left: 2px solid var(--color-border);
   color: var(--color-accent);
   font: inherit;
   font-weight: 700;
-  padding: 8px;
+  padding: 8px 10px;
   cursor: pointer;
   border-radius: 0;
-  text-align: left;
 }
 
 .notes-add:hover {
@@ -865,6 +911,7 @@ body {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  position: relative; /* anchors .notes-resize to the internal divider */
 }
 
 /* title input + preview toggle share a row; the row carries the border
