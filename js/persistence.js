@@ -1,5 +1,5 @@
 /*
- * PersonalOS — js/persistence.js
+ * pOS — js/persistence.js
  * ----------------------------------------------------------------------
  * localStorage persistence (Spec §9).
  *

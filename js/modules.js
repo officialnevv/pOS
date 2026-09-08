@@ -1,5 +1,5 @@
 /*
- * PersonalOS — js/modules.js
+ * pOS — js/modules.js
  * ----------------------------------------------------------------------
  * Central module registry (Spec §8).
  *

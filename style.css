@@ -1,5 +1,5 @@
 /*
- * PersonalOS — style.css
+ * pOS — style.css
  * ----------------------------------------------------------------------
  * Global stylesheet. All colors come from theme CSS custom properties
  * (Spec §6): themes swap a `data-theme` attribute + --color-* variables
@@ -151,6 +151,16 @@ body {
   color: var(--color-border);
   letter-spacing: 0.08em;
   user-select: none;
+}
+
+/* keybind box inside the hint, like a visual <kbd> tag (amendment #3) */
+#empty-workspace-hint .kbd {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  letter-spacing: 0.05em;
 }
 
 /* ---------------------------------------------------------------
@@ -492,7 +502,7 @@ body {
 
 /* ---------------------------------------------------------------
    11. Lock screen (Spec §12): full-screen theme-aware overlay,
-   non-editable "Personal OS" label, PIN input, shake on wrong PIN.
+   non-editable "pOS" label, PIN input, auto-unlock with fade-out,
    --------------------------------------------------------------- */
 #lock-screen {
   position: fixed;
@@ -501,6 +511,14 @@ body {
   place-items: center;
   background: var(--color-bg); /* solid, theme-aware */
   z-index: 5000; /* above every window and popup */
+  opacity: 1;
+  transition: opacity 0.4s ease; /* fade-out on unlock (amendment #1) */
+}
+
+/* unlock: overlay fades out, then JS removes it after the transition */
+#lock-screen.hiding {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .lock-box {

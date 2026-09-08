@@ -1,5 +1,5 @@
 /*
- * PersonalOS — js/wm-core.js
+ * pOS — js/wm-core.js
  * ----------------------------------------------------------------------
  * Window manager core + app bootstrap (entry point).
  *
@@ -64,7 +64,16 @@ function tickClock() {
   const dateEl = document.getElementById('top-bar-center');
   const timeEl = document.getElementById('top-bar-right');
   if (dateEl) dateEl.textContent = now.toLocaleDateString('en-GB', DATE_OPTS).replace(/,/g, '');
-  if (timeEl) timeEl.textContent = now.toLocaleTimeString('en-GB', { hour12: false });
+  if (timeEl) {
+    // 12-hour, minutes only (Spec §2 amendment); exact time with
+    // seconds lives in the hover tooltip, refreshed every tick.
+    timeEl.textContent = now.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    timeEl.title = now.toLocaleTimeString('en-GB', { hour12: false });
+  }
 }
 
 function startClock() {
@@ -89,6 +98,9 @@ const MIN_MASTER_RATIO = 0.2;
 const MAX_MASTER_RATIO = 0.8;
 const MIN_FLOAT_W = 160;
 const MIN_FLOAT_H = 100;
+// Default tiling layout for fresh workspaces (Spec §4 amendment:
+// dwindle is now the default; master-stack remains toggleable).
+const DEFAULT_LAYOUT = 'dwindle';
 // Outer gap (workspace edge -> windows) + inner gap (between windows).
 // Both derive from one constant: inner boundaries take HALF_GAP from
 // each adjacent window so inner gaps == WINDOW_GAP too.
@@ -98,7 +110,7 @@ const HALF_GAP = WINDOW_GAP / 2;
 const state = {
   activeWorkspace: 0,
   workspaces: Array.from({ length: WORKSPACE_COUNT }, () => ({
-    layoutMode: 'master-stack',
+    layoutMode: DEFAULT_LAYOUT,
     masterRatio: DEFAULT_MASTER_RATIO,
     windows: [],
     dwindleTree: null, // BSP tree of window ids (leaves); null in master-stack mode
@@ -306,6 +318,34 @@ function switchWorkspace(n) {
   render();
 }
 
+/** Alt+Shift+1..9 (Spec §10 amendment): move the focused window to
+ * workspace n. The *window* moves; the view stays on the current
+ * workspace (i3-style send-to-workspace). */
+function moveFocusedToWorkspace(id, targetIdx) {
+  const from = currentWorkspace();
+  const to = state.workspaces[clamp(targetIdx, 0, WORKSPACE_COUNT - 1)];
+  const idx = from.windows.findIndex((w) => w.id === id);
+  if (!to || to === from || idx === -1) return;
+  const [win] = from.windows.splice(idx, 1);
+  if (from.layoutMode === 'dwindle') {
+    from.dwindleTree = treeRemove(from.dwindleTree, win.id); // collapse node
+  }
+  to.windows.push(win); // last stack slice / newest dwindle leaf
+  if (to.layoutMode === 'dwindle') {
+    to.dwindleTree = treeInsert(
+      to.dwindleTree,
+      treeFirstLeaf(to.dwindleTree),
+      win.id
+    );
+  }
+  // refocus whatever is left behind (or nothing if the source emptied)
+  focusedWindowId = from.windows.length
+    ? from.windows[from.windows.length - 1].id
+    : null;
+  persistState();
+  render(); // pill slot 4-9 visibility may change on either side
+}
+
 /* ---------- dwindle layout (Spec §4) ----------
    Hyprland-style BSP: a per-workspace binary tree whose leaves are
    window ids. Internal nodes store their split ratio (default 0.5);
@@ -485,7 +525,11 @@ function render() {
   if (!ws.windows.length) {
     const hint = document.createElement('div');
     hint.id = 'empty-workspace-hint';
-    hint.textContent = 'Alt+Enter to launch a module';
+    // keybind portion rendered as a small bordered <kbd>-style box
+    const kbd = document.createElement('span');
+    kbd.className = 'kbd';
+    kbd.textContent = 'Alt+Enter';
+    hint.append(kbd, ' to launch a module');
     workspaceRoot.appendChild(hint);
     renderPill();
     return;
@@ -624,7 +668,7 @@ function restoreState() {
     const s = savedWorkspaces[String(i + 1)];
     if (!s) continue;
     const ws = state.workspaces[i];
-    ws.layoutMode = s.layoutMode === 'dwindle' ? 'dwindle' : 'master-stack';
+    ws.layoutMode = s.layoutMode === 'master-stack' ? 'master-stack' : DEFAULT_LAYOUT;
     ws.masterRatio = clamp(
       typeof s.masterRatio === 'number' ? s.masterRatio : DEFAULT_MASTER_RATIO,
       MIN_MASTER_RATIO,
@@ -697,7 +741,18 @@ function bindKeybinds() {
     else if (key === 'f' && !e.shiftKey) toggleFullscreen(focusedWindowId);
     else if (key === 'q' && !e.shiftKey) closeWindow(focusedWindowId);
     else if (key === 'enter') toggleLauncher();
-    else if (/^[1-9]$/.test(key) && !e.shiftKey) switchWorkspace(Number(key) - 1);
+    // Alt+1..9 switches workspaces; Alt+Shift+1..9 moves the focused
+    // window there instead (Spec §10 amendment). NOTE: with Shift held,
+    // e.key becomes shifted punctuation ('!'/'@'…) on layouts like
+    // US-ANSI, so the digit is resolved from the physical e.code first.
+    else if (/^[1-9]$/.test(key) || /^Digit[1-9]$/.test(e.code ?? '')) {
+      const n = /^Digit[1-9]$/.test(e.code ?? '')
+        ? Number(e.code.slice(5))
+        : Number(key);
+      e.shiftKey
+        ? moveFocusedToWorkspace(focusedWindowId, n - 1)
+        : switchWorkspace(n - 1);
+    }
     else handled = false;
 
     // keep all Alt combos away from browser/OS menu behavior
@@ -845,7 +900,8 @@ function renderPill() {
   if (!pill) return;
   pill.innerHTML = '';
 
-  // layout + theme toggles live left of the workspace numbers
+  // icons flank the numbers: layout toggle left, theme toggle right
+  // (Spec §3 amendment — numbers in the middle, one icon per side)
   const layoutBtn = document.createElement('span');
   layoutBtn.className = 'pill-icon';
   layoutBtn.textContent = ICON_LAYOUT;
@@ -858,7 +914,7 @@ function renderPill() {
   themeBtn.title = 'theme picker';
   themeBtn.addEventListener('click', toggleThemePicker);
 
-  pill.append(layoutBtn, themeBtn);
+  pill.appendChild(layoutBtn);
 
   for (let n = 1; n <= WORKSPACE_COUNT; n++) {
     // slots 1-3 always visible; 4-9 only while populated (Spec §3)
@@ -869,6 +925,8 @@ function renderPill() {
     slot.addEventListener('click', () => switchWorkspace(n - 1));
     pill.appendChild(slot);
   }
+
+  pill.appendChild(themeBtn);
 }
 
 /* ---------- module launcher (Spec §7) ---------- */

@@ -1,5 +1,5 @@
 /*
- * PersonalOS — js/modules/tasks.js
+ * pOS — js/modules/tasks.js
  * ----------------------------------------------------------------------
  * Tasks module — the first "app" (Spec §8).
  *

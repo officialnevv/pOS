@@ -1,5 +1,5 @@
 /*
- * PersonalOS — js/themes.js
+ * pOS — js/themes.js
  * ----------------------------------------------------------------------
  * Theme definitions and switching (Spec §6).
  *

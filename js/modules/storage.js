@@ -1,5 +1,5 @@
 /*
- * PersonalOS — js/modules/storage.js
+ * pOS — js/modules/storage.js
  * ----------------------------------------------------------------------
  * Storage module — a local, Google-Drive-style file manager (Spec §8).
  *
