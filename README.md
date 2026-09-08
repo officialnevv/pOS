@@ -23,7 +23,7 @@ npx serve .
 
 or use the VS Code Live Server extension if that's already in your setup.
 
-The page loads locked. The PIN is <000000>, it's hardcoded client-side, so it's a speed bump, not security. It unlocks the moment you finish typing it.
+The page loads locked. The PIN is 000000, it's hardcoded client-side, so it's a speed bump, not security. It unlocks the moment you finish typing it.
 
 ## Keybinds
 

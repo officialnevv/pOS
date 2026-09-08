@@ -19,9 +19,7 @@ const STATE_KEY = 'personal-os-state';
 
 /** Drop moduleData slices whose module is no longer registered. */
 function pruneModuleData(state) {
-  if (!state || typeof state !== 'object' || state.moduleData == null) {
-    return state;
-  }
+  if (!state?.moduleData) return state;
   const known = new Set(getAllModules().map((m) => m.id));
   return {
     ...state,

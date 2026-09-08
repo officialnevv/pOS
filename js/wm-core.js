@@ -1,82 +1,48 @@
 /*
  * pOS — js/wm-core.js
  * ----------------------------------------------------------------------
- * Window manager core + app bootstrap (entry point).
+ * Entry point + window manager core. A generic shell: it consumes the
+ * module registry (modules.js), themes, persistence, and the lock
+ * screen, but knows nothing about individual modules. To install one,
+ * create js/modules/<name>.js that calls registerModule(), then import
+ * it as a side effect below.
  *
- * This file is the generic tiling-WM shell (Spec §3–5, §10–11). It knows
- * nothing about individual modules — it only consumes the registry
- * (modules.js), themes (themes.js), and persistence (persistence.js).
- * Modules (if any are installed) are pulled in as side-effect imports
- * below so they register themselves at load time; the registry is
- * currently empty.
- *
- * Implemented:
- *   - Workspace state: 9 workspaces, each with its own windows,
- *     layoutMode (master-stack / dwindle), masterRatio + dwindle BSP
- *     tree; Alt+1..9 switching; workspace indicator pill (Spec §3).
- *   - Tiling layouts: dwindle BSP (default for new workspaces) and
- *     master-stack (55/45, live-adjustable), toggleable per workspace
- *     via the pill icon (Spec §4).
- *   - Window lifecycle: open/close (Alt+Q), promote to master
- *     (Alt+W), toggle floating (Alt+V, detaches in place), fullscreen
- *     overlay (Alt+F).
- *   - Generic module mounting: windows look their module up in the
- *     registry and mount/unmount its DOM (Spec §8); launching is
- *     singleton-aware across workspaces (Spec §5).
- *   - Module launcher (Alt+Enter, fuzzy filter, Spec §7) and theme
- *     picker popup (Spec §6) as centered popups.
- *   - Keybind handling: Alt+H/J/K/L focus, Alt+Shift+H/J/K/L resize,
- *     Alt+1..9 workspaces, Alt+Enter launcher — all with
- *     preventDefault (Spec §10).
- *   - Mouse behavior: focus-follows-hover, Alt+LeftClick drag
- *     (move/swap), Alt+RightClick drag (resize/ratio, with
- *     contextmenu suppressed) (Spec §11).
- *   - Shell chrome: live top-bar clock/date, empty-workspace hint.
- *
- *   - Persistence: full WM state (workspaces, windows, layouts,
- *     theme) saved to the single localStorage blob on every meaningful
- *     change and restored on page load (Spec §9); module data lives
- *     under the same blob's moduleData section.
+ * Data model: 9 workspaces, each with its own windows, layout mode and
+ * split state. Array order of `windows` is the tiling order (the first
+ * tiled window is the master). Tiled geometry is derived at render time
+ * and never stored; floating geometry and the fullscreen flag live on
+ * the window. One global focusedWindowId.
  */
 
-// Side-effect imports: modules register themselves with the registry.
-// (Currently none — the registry is empty and ready for real modules.
-// Add a module by creating js/modules/<name>.js that calls
-// registerModule(), then importing it here as a side effect.)
+// Side-effect imports: modules (when installed) register themselves
+// here at load time. The registry is currently empty.
 import './themes.js';
 import './persistence.js';
 import './modules.js';
 
-// Registry/theme/persistence APIs. The WM is a generic shell: it only
-// ever talks to the module *registry*, never to specific modules
-// (Spec §8).
 import { DEFAULT_THEME_ID, applyTheme, getAllThemes } from './themes.js';
 import { loadState, saveState, getModuleData, setModuleData } from './persistence.js';
 import { getAllModules, getModule } from './modules.js';
 import { initLockScreen } from './lockscreen.js';
 
-/* ---------------------------------------------------------------
-   Top bar clock (Spec §2) — live date (center) + time (right).
-   Part of the shell chrome, not the WM proper.
-   --------------------------------------------------------------- */
+/* ---------- top bar clock ---------- */
 
 const DATE_OPTS = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
 
 function tickClock() {
   const now = new Date();
-  const dateEl = document.getElementById('top-bar-center');
+  document.getElementById('top-bar-center').textContent = now
+    .toLocaleDateString('en-GB', DATE_OPTS)
+    .replace(/,/g, '');
   const timeEl = document.getElementById('top-bar-right');
-  if (dateEl) dateEl.textContent = now.toLocaleDateString('en-GB', DATE_OPTS).replace(/,/g, '');
-  if (timeEl) {
-    // 12-hour, minutes only (Spec §2 amendment); exact time with
-    // seconds lives in the hover tooltip, refreshed every tick.
-    timeEl.textContent = now.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    timeEl.title = now.toLocaleTimeString('en-GB', { hour12: false });
-  }
+  // 12-hour, minutes only; the exact time with seconds goes in the
+  // hover tooltip, refreshed every tick.
+  timeEl.textContent = now.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  timeEl.title = now.toLocaleTimeString('en-GB', { hour12: false });
 }
 
 function startClock() {
@@ -84,29 +50,19 @@ function startClock() {
   setInterval(tickClock, 1000);
 }
 
-/* ===============================================================
-   Window Manager core — state
-   Per the agreed data model:
-   - 9 workspaces; array order of `windows` = tiling order (the
-     first tiled window is the master).
-   - Tiled geometry is derived at render time, never stored; floating
-     geometry lives on the window; fullscreen is an overlay flag.
-   - focusedWindowId is a single global pointer.
-   =============================================================== */
+/* ---------- state ---------- */
 
 const WORKSPACE_COUNT = 9;
+const DEFAULT_LAYOUT = 'dwindle'; // dwindle by default; master-stack via the pill icon
 const DEFAULT_MASTER_RATIO = 0.55;
 const RATIO_STEP = 0.05;
 const MIN_MASTER_RATIO = 0.2;
 const MAX_MASTER_RATIO = 0.8;
 const MIN_FLOAT_W = 160;
 const MIN_FLOAT_H = 100;
-// Default tiling layout for fresh workspaces (Spec §4 amendment:
-// dwindle is now the default; master-stack remains toggleable).
-const DEFAULT_LAYOUT = 'dwindle';
-// Outer gap (workspace edge -> windows) + inner gap (between windows).
-// Both derive from one constant: inner boundaries take HALF_GAP from
-// each adjacent window so inner gaps == WINDOW_GAP too.
+// One gap constant drives both: the workspace edge inset is WINDOW_GAP,
+// and internal boundaries take HALF_GAP from each adjacent window, so
+// inner gaps come out equal to the outer ones.
 const WINDOW_GAP = 12;
 const HALF_GAP = WINDOW_GAP / 2;
 
@@ -116,7 +72,7 @@ const state = {
     layoutMode: DEFAULT_LAYOUT,
     masterRatio: DEFAULT_MASTER_RATIO,
     windows: [],
-    dwindleTree: null, // BSP tree of window ids (leaves); null in master-stack mode
+    dwindleTree: null, // BSP tree of window ids; null in master-stack mode
   })),
 };
 
@@ -142,9 +98,9 @@ function openWindow(moduleId) {
     floatingGeometry: null,
     isFullscreen: false,
   };
-  // Master-stack: new windows spawn as master, pushing the previous
-  // master into the top of the stack (Spec §4). Dwindle: the new
-  // window splits the currently focused window's space.
+  // Master-stack: new windows spawn as master, pushing the previous one
+  // to the top of the stack. Dwindle: the new window splits the focused
+  // window's space.
   const firstTiledIdx = ws.windows.findIndex((w) => w.state === 'tiled');
   if (firstTiledIdx === -1) ws.windows.push(win);
   else ws.windows.splice(firstTiledIdx, 0, win);
@@ -228,26 +184,22 @@ function toggleFloating(id) {
   const win = findWindow(id);
   if (!win || win.isFullscreen) return;
   if (win.state === 'tiled') {
-    // Float: reuse the window's *remembered* floating geometry if it
-    // has one — floating position/size survives round-trips through
-    // tiling (Spec §5: "floating windows remember their position/size").
-    // The first-ever float detaches "in place" from the last tiled rect;
-    // remaining tiled windows reflow to fill the gap it left.
+    // Reuse the remembered floating geometry so position survives
+    // round-trips through tiling; the first-ever float detaches "in
+    // place" from the last tiled rect instead.
     if (!win.floatingGeometry) {
       win.floatingGeometry = win._lastRect ?? { x: 60, y: 60, w: 480, h: 320 };
     }
     win.state = 'floating';
     if (ws.layoutMode === 'dwindle') {
-      ws.dwindleTree = treeRemove(ws.dwindleTree, win.id); // collapse node
+      ws.dwindleTree = treeRemove(ws.dwindleTree, win.id); // collapse the node
     }
   } else {
     win.state = 'tiled';
-    // NOTE: floatingGeometry is deliberately *kept* here (not nulled):
-    // tiled geometry is derived at render time, so the stale value is
-    // inert while tiled — and it restores the old floating position the
-    // next time this window floats (Spec §5).
+    // Keep floatingGeometry: it's inert while tiled (tiled geometry is
+    // derived at render time) and restores the old floating position on
+    // the next Alt+V.
     if (ws.layoutMode === 'dwindle') {
-      // re-enter the tiling tree by splitting a sibling's space
       const targetId = dwindleSplitTarget(ws, focusedWindowId, win.id);
       ws.dwindleTree = treeInsert(ws.dwindleTree, targetId, win.id);
     }
@@ -259,8 +211,8 @@ function toggleFloating(id) {
 function toggleFullscreen(id) {
   const win = findWindow(id);
   if (!win) return;
-  // overlay flag only — tiled slots / floating geometry untouched,
-  // everything underneath is unaffected (Spec §5)
+  // overlay flag only: tiled slots and floating geometry underneath
+  // are untouched, so restoring is exact
   win.isFullscreen = !win.isFullscreen;
   persistState();
   render();
@@ -273,25 +225,21 @@ function promoteToMaster(id) {
   const masterIdx = ws.windows.findIndex((w) => w.state === 'tiled');
   if (idx === -1 || masterIdx === -1 || idx === masterIdx) return;
   if (ws.windows[idx].state !== 'tiled') return; // promotion is for tiled windows
-  // swap focused window with the current master (Spec §10)
   [ws.windows[idx], ws.windows[masterIdx]] = [ws.windows[masterIdx], ws.windows[idx]];
   persistState();
   render();
 }
 
-/** Adjust the active layout's split (Spec §10). master-stack: only the
- * horizontal master ratio; dwindle: the focused window's parent split. */
+/** Adjust the active layout's split: the master ratio in master-stack,
+ * the focused window's parent split in dwindle. */
 function resizeSplit(delta, axis) {
   const ws = currentWorkspace();
   if (ws.layoutMode === 'dwindle') {
-    const parent =
-      focusedWindowId != null
-        ? findParentNode(ws.dwindleTree, focusedWindowId)
-        : null;
+    const parent = findParentNode(ws.dwindleTree, focusedWindowId);
     if (!parent) return;
     parent.ratio = clamp(parent.ratio + delta, MIN_MASTER_RATIO, MAX_MASTER_RATIO);
   } else {
-    if (axis !== 'h') return; // no vertical resize in master-stack
+    if (axis !== 'h') return; // stack slices are fixed height
     ws.masterRatio = clamp(ws.masterRatio + delta, MIN_MASTER_RATIO, MAX_MASTER_RATIO);
   }
   persistState();
@@ -321,14 +269,13 @@ function switchWorkspace(n) {
   render();
 }
 
-/** Alt+Shift+1..9 (Spec §10, amended): move the focused window to
- * workspace n. The view follows: you land on the target workspace
- * with the moved window focused there. */
+/** Alt+Shift+1..9: move the focused window to workspace n; the view
+ * follows, so you land there with the moved window focused. */
 function moveFocusedToWorkspace(id, targetIdx) {
   const from = currentWorkspace();
-  const to = state.workspaces[clamp(targetIdx, 0, WORKSPACE_COUNT - 1)];
+  const to = state.workspaces[targetIdx];
   const idx = from.windows.findIndex((w) => w.id === id);
-  if (!to || to === from || idx === -1) return;
+  if (to === from || idx === -1) return;
   const [win] = from.windows.splice(idx, 1);
   if (from.layoutMode === 'dwindle') {
     from.dwindleTree = treeRemove(from.dwindleTree, win.id); // collapse node
@@ -341,9 +288,7 @@ function moveFocusedToWorkspace(id, targetIdx) {
       win.id
     );
   }
-  // view FOLLOWS the moved window (amendment #2): land on the target
-  // workspace with the moved window focused there
-  state.activeWorkspace = clamp(targetIdx, 0, WORKSPACE_COUNT - 1);
+  state.activeWorkspace = targetIdx;
   focusedWindowId = win.id;
   persistState();
   render(); // pill slot 4-9 visibility may change on either side
@@ -471,14 +416,6 @@ function toggleLayout() {
 
 const windowEls = new Map(); // win.id -> { el, content }
 
-/** Services the WM hands to every module mount (Spec §8/§9). */
-function createContext(moduleId) {
-  return {
-    load: () => getModuleData(moduleId),
-    persist: (data) => setModuleData(moduleId, data),
-  };
-}
-
 function createWindowEl(win) {
   const el = document.createElement('div');
   el.className = 'window';
@@ -488,10 +425,14 @@ function createWindowEl(win) {
   content.className = 'window-content';
   el.appendChild(content);
 
-  // generic mount — the WM knows nothing about this module (Spec §8)
+  // generic mount — the WM knows nothing about the module itself. The
+  // context gives it its own slice of moduleData (Spec §8/§9).
   const mod = getModule(win.moduleId);
-  if (mod?.mount) {
-    mod.mount(content, createContext(win.moduleId));
+  if (mod) {
+    mod.mount(content, {
+      load: () => getModuleData(win.moduleId),
+      persist: (slice) => setModuleData(win.moduleId, slice),
+    });
   } else {
     content.textContent = `unknown module: ${win.moduleId}`;
   }
@@ -518,7 +459,7 @@ function render() {
   );
   for (const [id, entry] of windowEls) {
     if (!liveIds.has(id)) {
-      entry.el.remove?.();
+      entry.el.remove();
       windowEls.delete(id);
     }
   }
@@ -600,24 +541,24 @@ function render() {
       el.classList.add('floating');
       setRect(el, win.floatingGeometry);
     } else {
-      const r = rects.get(win.id) ?? { x: 0, y: 0, w: W, h: H };
-      win._lastRect = r; // remembered for "detach in place" (Spec §5)
-      setRect(el, r);
+      const rect = rects.get(win.id) ?? { x: 0, y: 0, w: W, h: H };
+      win._lastRect = rect; // remembered so Alt+V can detach "in place"
+      setRect(el, rect);
     }
 
     if (win.id === focusedWindowId) el.classList.add('focused');
 
-    workspaceRoot.appendChild(el); // re-attach the cached element
+    workspaceRoot.appendChild(el);
   }
 
   renderPill();
 }
 
-function setRect(el, r) {
-  el.style.left = `${r.x}px`;
-  el.style.top = `${r.y}px`;
-  el.style.width = `${r.w}px`;
-  el.style.height = `${r.h}px`;
+function setRect(el, rect) {
+  el.style.left = `${rect.x}px`;
+  el.style.top = `${rect.y}px`;
+  el.style.width = `${rect.w}px`;
+  el.style.height = `${rect.h}px`;
 }
 
 /* ---------- persistence (Spec §9) ----------
@@ -673,16 +614,16 @@ function restoreState() {
   let maxId = 0;
   const savedWorkspaces = saved.workspaces ?? {};
   for (let i = 0; i < WORKSPACE_COUNT; i++) {
-    const s = savedWorkspaces[String(i + 1)];
-    if (!s) continue;
+    const savedWs = savedWorkspaces[String(i + 1)];
+    if (!savedWs) continue;
     const ws = state.workspaces[i];
-    ws.layoutMode = s.layoutMode === 'master-stack' ? 'master-stack' : DEFAULT_LAYOUT;
+    ws.layoutMode = savedWs.layoutMode === 'master-stack' ? 'master-stack' : DEFAULT_LAYOUT;
     ws.masterRatio = clamp(
-      typeof s.masterRatio === 'number' ? s.masterRatio : DEFAULT_MASTER_RATIO,
+      typeof savedWs.masterRatio === 'number' ? savedWs.masterRatio : DEFAULT_MASTER_RATIO,
       MIN_MASTER_RATIO,
       MAX_MASTER_RATIO
     );
-    for (const w of Array.isArray(s.windows) ? s.windows : []) {
+    for (const w of Array.isArray(savedWs.windows) ? savedWs.windows : []) {
       // skip unknown modules (e.g. a module that was removed later)
       if (!w || typeof w.moduleId !== 'string' || !getModule(w.moduleId)) continue;
       const g = w.floatingGeometry;
@@ -696,9 +637,9 @@ function restoreState() {
       });
       maxId = Math.max(maxId, ws.windows[ws.windows.length - 1].id);
     }
-    if (ws.layoutMode === 'dwindle' && s.dwindleTree) {
+    if (ws.layoutMode === 'dwindle' && savedWs.dwindleTree) {
       // drop tree leaves whose window no longer exists
-      let tree = s.dwindleTree;
+      let tree = savedWs.dwindleTree;
       const ids = new Set(ws.windows.map((w) => w.id));
       for (const leaf of treeLeaves(tree)) {
         if (!ids.has(leaf)) tree = treeRemove(tree, leaf);
@@ -732,8 +673,8 @@ function treeLeaves(node, out = []) {
 function bindKeybinds() {
   window.addEventListener('keydown', (e) => {
     if (!e.altKey) return;
-    // don't hijack typing in future inputs (launcher, module content)
-    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName ?? '')) return;
+    // don't hijack typing in inputs (launcher, module content)
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
 
     const key = e.key.toLowerCase();
     let handled = true;
@@ -750,18 +691,18 @@ function bindKeybinds() {
     else if (key === 'q' && !e.shiftKey) closeWindow(focusedWindowId);
     else if (key === 'enter') toggleLauncher();
     // Alt+1..9 switches workspaces; Alt+Shift+1..9 moves the focused
-    // window there instead (Spec §10 amendment). NOTE: with Shift held,
-    // e.key becomes shifted punctuation ('!'/'@'…) on layouts like
-    // US-ANSI, so the digit is resolved from the physical e.code first.
-    else if (/^[1-9]$/.test(key) || /^Digit[1-9]$/.test(e.code ?? '')) {
-      const n = /^Digit[1-9]$/.test(e.code ?? '')
-        ? Number(e.code.slice(5))
-        : Number(key);
-      e.shiftKey
-        ? moveFocusedToWorkspace(focusedWindowId, n - 1)
-        : switchWorkspace(n - 1);
+    // window there instead. With Shift held, e.key becomes shifted
+    // punctuation ('!'/'@') on layouts like US-ANSI, so prefer the
+    // layout-independent e.code.
+    else {
+      const digit = /^Digit([1-9])$/.exec(e.code)?.[1] ?? (/^[1-9]$/.test(key) ? key : null);
+      if (digit != null) {
+        const target = Number(digit) - 1;
+        e.shiftKey ? moveFocusedToWorkspace(focusedWindowId, target) : switchWorkspace(target);
+      } else {
+        handled = false;
+      }
     }
-    else handled = false;
 
     // keep all Alt combos away from browser/OS menu behavior
     if (handled) e.preventDefault();
@@ -774,28 +715,50 @@ function bindKeybinds() {
 let activeDrag = null;
 
 function bindMouse() {
-  // focus-follows-hover (paused while dragging so focus doesn't steal)
+  // focus-follows-hover, but not while a drag is in progress
   workspaceRoot.addEventListener('mouseover', (e) => {
     if (activeDrag) return;
-    const el = e.target.closest?.('.window');
+    const el = e.target.closest('.window');
     if (el) focusWindow(Number(el.dataset.windowId));
   });
 
   workspaceRoot.addEventListener('mousedown', (e) => {
     if (!e.altKey) return;
-    const el = e.target.closest?.('.window');
+    const el = e.target.closest('.window');
     if (!el) return;
     e.preventDefault();
     const win = findWindow(Number(el.dataset.windowId));
     if (!win) return;
     focusWindow(win.id);
+    const rootRect = workspaceRoot.getBoundingClientRect();
 
     if (e.button === 0) {
-      if (win.state === 'floating') startMoveDrag(win, el, e);
-      else startSwapDrag(win);
+      if (win.state === 'floating') {
+        // grab offset so the window follows the cursor without jumping
+        const rect = el.getBoundingClientRect();
+        activeDrag = {
+          type: 'move',
+          win,
+          el,
+          rootRect,
+          offsetX: e.clientX - rect.left,
+          offsetY: e.clientY - rect.top,
+        };
+      } else {
+        activeDrag = { type: 'swap', win }; // drop target decided at mouseup
+      }
     } else if (e.button === 2) {
-      if (win.state === 'floating') startResizeDrag(win, el, e);
-      else startRatioDrag();
+      activeDrag = win.state === 'floating'
+        ? {
+            type: 'resize',
+            win,
+            el,
+            startX: e.clientX,
+            startY: e.clientY,
+            startW: el.offsetWidth,
+            startH: el.offsetHeight,
+          }
+        : { type: 'ratio', rootRect };
     }
   });
 
@@ -806,40 +769,6 @@ function bindMouse() {
 
   window.addEventListener('mousemove', onDragMove);
   window.addEventListener('mouseup', onDragEnd);
-}
-
-function startMoveDrag(win, el, e) {
-  const rootRect = workspaceRoot.getBoundingClientRect();
-  const r = el.getBoundingClientRect();
-  activeDrag = {
-    type: 'move',
-    win,
-    el,
-    rootRect,
-    offsetX: e.clientX - r.left,
-    offsetY: e.clientY - r.top,
-  };
-}
-
-function startResizeDrag(win, el, e) {
-  activeDrag = {
-    type: 'resize',
-    win,
-    el,
-    rootRect: workspaceRoot.getBoundingClientRect(),
-    startX: e.clientX,
-    startY: e.clientY,
-    startW: el.offsetWidth,
-    startH: el.offsetHeight,
-  };
-}
-
-function startSwapDrag(win) {
-  activeDrag = { type: 'swap', win };
-}
-
-function startRatioDrag() {
-  activeDrag = { type: 'ratio', rootRect: workspaceRoot.getBoundingClientRect() };
 }
 
 function onDragMove(e) {
@@ -875,18 +804,18 @@ function onDragEnd(e) {
 
   if (drag.type === 'move' || drag.type === 'resize') {
     // commit final geometry (root-relative) and reflow
-    const r = drag.el.getBoundingClientRect();
+    const rect = drag.el.getBoundingClientRect();
     drag.win.floatingGeometry = {
-      x: Math.round(r.left - drag.rootRect.left),
-      y: Math.round(r.top - drag.rootRect.top),
-      w: Math.round(r.width),
-      h: Math.round(r.height),
+      x: Math.round(rect.left - drag.rootRect.left),
+      y: Math.round(rect.top - drag.rootRect.top),
+      w: Math.round(rect.width),
+      h: Math.round(rect.height),
     };
     persistState();
     render();
   } else if (drag.type === 'swap') {
     // tiled Alt+Left-drag: swap with whichever window was dropped onto
-    const hit = document.elementFromPoint?.(e.clientX, e.clientY)?.closest?.('.window');
+    const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest('.window');
     if (hit) {
       const target = findWindow(Number(hit.dataset.windowId));
       if (target && target.id !== drag.win.id && drag.win.state === 'tiled' && target.state === 'tiled') {
@@ -894,7 +823,7 @@ function onDragEnd(e) {
       }
     }
   } else if (drag.type === 'ratio') {
-    persistState(); // ratio committed live during move; save the final value
+    persistState(); // ratio was committed live during move; save the final value
   }
 }
 
@@ -990,7 +919,7 @@ function openLauncher() {
 }
 
 function closeLauncher() {
-  launcher?.overlay.remove();
+  launcher.overlay.remove();
   launcher = null;
 }
 
@@ -1007,14 +936,12 @@ function fuzzyMatch(query, text) {
 }
 
 function filterLauncher(query) {
-  if (!launcher) return; // stale input events after close
   launcher.filtered = getAllModules().filter((m) => fuzzyMatch(query, m.name));
   launcher.selected = 0;
   renderLauncherList();
 }
 
 function renderLauncherList() {
-  if (!launcher) return;
   const { list, filtered, selected } = launcher;
   list.innerHTML = '';
   if (!filtered.length) {
@@ -1047,7 +974,6 @@ function renderLauncherList() {
 }
 
 function launcherMove(delta) {
-  if (!launcher) return;
   const n = launcher.filtered.length;
   if (!n) return;
   launcher.selected = (launcher.selected + delta + n) % n;
@@ -1088,10 +1014,10 @@ function openThemePicker() {
     const swatches = document.createElement('span');
     swatches.className = 'theme-swatches';
     for (const color of Object.values(theme.colors)) {
-      const sw = document.createElement('span');
-      sw.className = 'theme-swatch';
-      sw.style.background = color;
-      swatches.appendChild(sw);
+      const swatch = document.createElement('span');
+      swatch.className = 'theme-swatch';
+      swatch.style.background = color;
+      swatches.appendChild(swatch);
     }
 
     const name = document.createElement('span');
@@ -1118,7 +1044,7 @@ function openThemePicker() {
 }
 
 function closeThemePicker() {
-  themePicker?.overlay.remove();
+  themePicker.overlay.remove();
   themePicker = null;
 }
 

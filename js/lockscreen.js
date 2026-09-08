@@ -11,9 +11,9 @@
  *   - Full-screen, theme-aware overlay covering everything (shown on
  *     every page load via initLockScreen(), Spec §12).
  *   - "pOS" is a display label, NOT an editable input.
- *   - PIN: 000000. AUTO-UNLOCK the moment the correct PIN is fully
- *     entered — no Enter required (amendment #1). The overlay fades
- *     out via a CSS opacity transition instead of vanishing instantly.
+ *   - PIN: 000000. Unlocks the moment the correct PIN is fully typed —
+ *     no Enter needed. The overlay fades out via a CSS opacity
+ *     transition instead of vanishing instantly.
  *   - Wrong PIN -> brief error text + shake animation + input cleared;
  *     no lockout, no limiting. Enter still works as a redundant submit.
  *
@@ -56,7 +56,7 @@ function buildOverlay() {
 
   input.addEventListener('input', () => {
     error.textContent = '';
-    // amendment #1: unlock as soon as the full PIN is typed
+    // unlock as soon as the full PIN is typed
     if (input.value === LOCK_PIN) unlock();
   });
   input.addEventListener('keydown', (e) => {
@@ -78,9 +78,10 @@ function buildOverlay() {
 
 /** Fade the overlay out, then remove it from the DOM. */
 function unlock() {
+  // the Enter keydown can land right after auto-unlock — nothing to do then
   if (!lockOverlay) return;
   const overlay = lockOverlay;
-  if (lockInput) lockInput.disabled = true; // block edits during the fade
+  lockInput.disabled = true; // block edits during the fade
   lockOverlay = null;
   lockInput = null;
   overlay.classList.add('hiding'); // CSS opacity transition (style.css)
