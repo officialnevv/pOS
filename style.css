@@ -492,3 +492,232 @@ body {
 .lock-box.shake {
   animation: lock-shake 0.3s;
 }
+/* ---------------------------------------------------------------
+   Tasks module — checkbox to-do list (Spec §8). Data persists under
+   moduleData.tasks (Spec §9).
+   --------------------------------------------------------------- */
+.tasks-add {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.tasks-add input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  border-radius: 0;
+}
+
+.tasks-add input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.tasks-add button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.tasks-add button:hover {
+  border-color: var(--color-accent);
+}
+
+.tasks-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+}
+
+.task-item input[type='checkbox'] {
+  accent-color: var(--color-accent);
+  flex: none;
+}
+
+.task-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* done tasks: dimmed + struck through */
+.task-item.done .task-text {
+  color: var(--color-border);
+  text-decoration: line-through;
+}
+
+.task-remove {
+  background: none;
+  border: none;
+  color: var(--color-border);
+  font: inherit;
+  cursor: pointer;
+  padding: 0 4px;
+  flex: none;
+}
+
+.task-remove:hover {
+  color: var(--color-accent-secondary);
+}
+
+.tasks-empty {
+  padding: 16px 12px;
+  color: var(--color-border);
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------
+   Notes module — multiple titled notes with inline editing (Spec §8).
+   Data persists under moduleData.notes (Spec §9).
+   --------------------------------------------------------------- */
+.notes {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.notes-sidebar {
+  width: 140px;
+  flex: none;
+  border-right: 2px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.notes-add {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 0;
+  text-align: left;
+}
+
+.notes-add:hover {
+  color: var(--color-bg);
+  background: var(--color-accent);
+}
+
+.notes-tabs {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.notes-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px 5px 10px;
+  cursor: pointer;
+  color: var(--color-fg);
+}
+
+.notes-tab:hover {
+  background: color-mix(in srgb, var(--color-border) 30%, transparent);
+}
+
+.notes-tab.selected {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.notes-tab-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.notes-tab-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.4;
+  font: inherit;
+  cursor: pointer;
+  padding: 0 2px;
+  flex: none;
+}
+
+.notes-tab-remove:hover {
+  opacity: 1;
+}
+
+.notes-editor {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.notes-title {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 0;
+}
+
+.notes-title:focus {
+  outline: none;
+}
+
+.notes-body {
+  flex: 1;
+  min-height: 0;
+  background: transparent;
+  border: none;
+  color: var(--color-fg);
+  font: inherit;
+  padding: 10px 12px;
+  resize: none;
+  border-radius: 0;
+}
+
+.notes-body:focus {
+  outline: none;
+}
+
+.notes-empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  color: var(--color-border);
+}

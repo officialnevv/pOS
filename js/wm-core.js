@@ -14,11 +14,15 @@
  * the window. One global focusedWindowId.
  */
 
-// Side-effect imports: modules (when installed) register themselves
-// here at load time. The registry is currently empty.
+// Side-effect imports: modules register themselves with the registry.
+// Tasks and Notes are installed; add more by creating
+// js/modules/<name>.js that calls registerModule(), then importing it
+// here as a side effect.
 import './themes.js';
 import './persistence.js';
 import './modules.js';
+import './modules/tasks.js';
+import './modules/notes.js';
 
 import { DEFAULT_THEME_ID, applyTheme, getAllThemes } from './themes.js';
 import { loadState, saveState, getModuleData, setModuleData } from './persistence.js';
