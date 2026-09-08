@@ -968,6 +968,19 @@ body {
   font-size: 1.05em;
 }
 
+.notes-preview h4 {
+  font-size: 1em;
+}
+
+.notes-preview h5 {
+  font-size: 0.95em;
+}
+
+.notes-preview h6 {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
 .notes-preview p {
   margin: 0.4em 0;
 }
@@ -996,6 +1009,46 @@ body {
 
 .notes-preview a:hover {
   color: var(--color-accent-secondary);
+}
+
+/* fenced code block: subtle tinted panel, verbatim whitespace */
+.notes-preview pre {
+  margin: 0.6em 0;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--color-border) 25%, transparent);
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+/* code inside a block loses the inline-code pill treatment */
+.notes-preview pre code {
+  padding: 0;
+  background: none;
+  color: var(--color-fg);
+}
+
+/* pipe tables: 2px cell borders, sharp corners, like window chrome */
+.notes-preview table {
+  border-collapse: collapse;
+  margin: 0.6em 0;
+}
+
+.notes-preview th,
+.notes-preview td {
+  border: 2px solid var(--color-border);
+  padding: 4px 8px;
+}
+
+.notes-preview th {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+/* horizontal rule: themed divider */
+.notes-preview hr {
+  border: none;
+  border-top: 2px solid var(--color-border);
+  margin: 1em 0;
 }
 
 .notes-empty {

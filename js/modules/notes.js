@@ -19,8 +19,8 @@ const NOTES_ICON = '\uf249'; // Nerd Font sticky-note
 
 // Minimal markdown → HTML for the preview pane. Text is HTML-escaped
 // first so a note can never inject markup; only the syntax listed below
-// is supported (single-level lists, no tables/nesting — plenty for
-// personal notes; underscores inside words may read as emphasis).
+// is supported (single-level lists, no nesting — plenty for personal
+// notes; underscores inside words may read as emphasis).
 function escapeHtml(text) {
   return text
     .replaceAll('&', '&amp;')
@@ -44,22 +44,97 @@ function inlineMarkdown(text) {
     );
 }
 
+// Table helpers. A row is a candidate table row when it contains a pipe;
+// \| escapes a literal pipe. Tables only start on a pipe row whose next
+// line is a well-formed separator — otherwise the line stays a paragraph.
+function splitCells(line) {
+  return line
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split(/(?<!\\)\|/)
+    .map((cell) => cell.replaceAll('\\|', '|').trim());
+}
+
+function isSeparatorRow(cells) {
+  return cells.length > 0 && cells.every((cell) => /^:?-+:?$/.test(cell));
+}
+
+function cellAlign(cell) {
+  if (cell.startsWith(':') && cell.endsWith(':')) return 'center';
+  if (cell.endsWith(':')) return 'right';
+  return 'left';
+}
+
 function renderMarkdown(source) {
+  const lines = escapeHtml(source).split('\n');
   const out = [];
   let list = null; // currently open list tag: 'ul' | 'ol' | null
+  let code = null; // collected body lines while a ``` fence is open
   const closeList = () => {
     if (list) out.push(`</${list}>`);
     list = null;
   };
+  const closeCode = () => {
+    out.push(`<pre><code>${code.join('\n')}</code></pre>`);
+    code = null;
+  };
 
-  for (const line of escapeHtml(source).split('\n')) {
-    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+  for (let i = 0; i < lines.length; ) {
+    const line = lines[i];
+
+    // inside a fence everything is verbatim (already escaped) until the
+    // closing fence; an unterminated block just ends at EOF
+    if (code !== null) {
+      if (/^\s*```\s*$/.test(line)) closeCode();
+      else code.push(line);
+      i += 1;
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,6})\s+(.+)$/);
+    const rule = line.match(/^\s*-{3,}\s*$/);
     const bullet = line.match(/^\s*[-*]\s+(.+)$/);
     const numbered = line.match(/^\s*\d+\.\s+(.+)$/);
+
+    // fenced code block opens (``` with an optional language tag)
+    if (/^\s*```/.test(line)) {
+      closeList();
+      code = [];
+      i += 1;
+      continue;
+    }
+
+    if (line.includes('|') && i + 1 < lines.length) {
+      const header = splitCells(line);
+      const separator = splitCells(lines[i + 1]);
+      if (isSeparatorRow(separator) && separator.length === header.length) {
+        closeList();
+        const aligns = separator.map(cellAlign);
+        const head = header
+          .map((cell, c) => `<th style="text-align:${aligns[c]}">${inlineMarkdown(cell)}</th>`)
+          .join('');
+        let body = '';
+        i += 2;
+        while (i < lines.length && lines[i].includes('|')) {
+          const row = splitCells(lines[i]);
+          body += `<tr>${aligns
+            .map((align, c) => `<td style="text-align:${align}">${inlineMarkdown(row[c] ?? '')}</td>`)
+            .join('')}</tr>`;
+          i += 1;
+        }
+        out.push(`<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`);
+        continue;
+      }
+    }
+
     if (heading) {
       closeList();
       const level = heading[1].length;
       out.push(`<h${level}>${inlineMarkdown(heading[2])}</h${level}>`);
+    } else if (rule) {
+      closeList();
+      out.push('<hr>');
     } else if (bullet) {
       if (list !== 'ul') {
         closeList();
@@ -78,7 +153,9 @@ function renderMarkdown(source) {
       closeList();
       if (line.trim()) out.push(`<p>${inlineMarkdown(line)}</p>`);
     }
+    i += 1;
   }
+  if (code) closeCode();
   closeList();
   return out.join('\n');
 }
