@@ -1479,6 +1479,21 @@ body {
   border-color: var(--color-accent);
 }
 
+.watchlater-title-commit {
+  background: none;
+  border: none;
+  color: var(--color-border);
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 4px;
+  flex: none;
+}
+
+.watchlater-title-commit:hover {
+  color: var(--color-accent);
+}
+
 .watchlater-remove {
   background: none;
   border: none;

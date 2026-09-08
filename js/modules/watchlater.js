@@ -7,7 +7,8 @@
  *     oEmbed endpoint (no API key):
  *       https://www.youtube.com/oembed?url={url}&format=json
  *   - any other URL is never scraped: it shows the raw URL until a
- *     title is typed manually (inline input on the entry)
+ *     title is typed manually (inline input on the entry, committed
+ *     with Enter or the inline add button)
  *   - a failed title fetch degrades to the same manual entry
  * Each entry has a watched toggle (watched entries render dimmed with a
  * strikethrough) and a remove button.
@@ -136,19 +137,31 @@ function mount(container, context) {
       li.append(check, link);
 
       // manual title entry: shown while the title is unknown (non-YouTube
-      // URLs, or a failed oEmbed fetch). Typing persists immediately.
+      // URLs, or a failed oEmbed fetch). Typing is draft-only (no side
+      // effects); the title commits on Enter or the inline add button,
+      // the same explicit-submit pattern as the URL row above.
       if (!item.title) {
         const titleInput = document.createElement('input');
         titleInput.type = 'text';
         titleInput.className = 'watchlater-title-input';
         titleInput.placeholder = 'title…';
-        titleInput.value = item.title;
-        titleInput.addEventListener('input', () => {
-          item.title = titleInput.value.trim();
+        const commitTitle = () => {
+          const t = titleInput.value.trim();
+          if (!t) return; // empty draft -> nothing to save
+          item.title = t;
           persist();
-          if (item.title) renderList(); // input graduates to the title text
+          renderList(); // input graduates to the title text
+        };
+        titleInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') commitTitle();
         });
-        li.append(titleInput);
+        const titleBtn = document.createElement('button');
+        titleBtn.type = 'button';
+        titleBtn.className = 'watchlater-title-commit';
+        titleBtn.textContent = '+';
+        titleBtn.title = 'save title';
+        titleBtn.addEventListener('click', commitTitle);
+        li.append(titleInput, titleBtn);
       }
 
       const removeBtn = document.createElement('button');
