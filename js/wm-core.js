@@ -25,6 +25,9 @@ import './modules/tasks.js';
 import './modules/notes.js';
 import './modules/pomodoro.js';
 import './modules/weather.js';
+import './modules/agenda.js';
+import './modules/bookmarks.js';
+import './modules/watchlater.js';
 
 import { DEFAULT_THEME_ID, applyTheme, getAllThemes } from './themes.js';
 import { loadState, saveState, getModuleData, setModuleData } from './persistence.js';
