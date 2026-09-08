@@ -545,30 +545,81 @@ body {
 
 .task-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding: 6px 12px;
 }
 
-.task-item input[type='checkbox'] {
-  accent-color: var(--color-accent);
+/* custom checkbox: theme-drawn box, Nerd Font check glyph when done */
+.task-check {
+  width: 16px;
+  height: 16px;
   flex: none;
+  margin-top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: transparent; /* unchecked: box only, no glyph */
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 0;
+  transition: color 0.1s ease, border-color 0.1s ease;
+}
+
+.task-check:hover {
+  border-color: var(--color-accent);
+}
+
+.task-item.done .task-check {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.task-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .task-text {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* done tasks: dimmed + struck through */
-.task-item.done .task-text {
+.task-meta {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
   color: var(--color-border);
-  text-decoration: line-through;
 }
 
+.task-due {
+  font-variant-numeric: tabular-nums;
+}
+
+.task-priority {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.task-priority.prio-high {
+  color: var(--color-accent-secondary);
+}
+
+.task-priority.prio-medium {
+  color: var(--color-accent);
+}
+
+.task-expand,
 .task-remove {
   background: none;
   border: none;
@@ -579,8 +630,85 @@ body {
   flex: none;
 }
 
+.task-expand:hover,
 .task-remove:hover {
   color: var(--color-accent-secondary);
+}
+
+/* per-task editor: due date, priority, description */
+.task-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 12px 8px 38px;
+  padding: 8px;
+  border: 2px solid var(--color-border);
+}
+
+.task-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-border);
+}
+
+.task-edit-row input,
+.task-edit-row select {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 2px 6px;
+  border-radius: 0;
+  color-scheme: dark; /* keep native date-picker chrome legible */
+}
+
+.task-edit-row input:focus,
+.task-edit-row select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.task-edit textarea {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  min-height: 48px;
+  resize: vertical;
+  border-radius: 0;
+}
+
+.task-edit textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+/* priority filter above the list */
+.tasks-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--color-border);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.tasks-filter select {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 2px 6px;
+  border-radius: 0;
+}
+
+.tasks-filter select:focus {
+  outline: none;
+  border-color: var(--color-accent);
 }
 
 .tasks-empty {
@@ -595,17 +723,28 @@ body {
    --------------------------------------------------------------- */
 .notes {
   display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* two-column row: fixed-width sidebar (scrolls on its own when the
+   list grows) + editor filling the rest */
+.notes-body {
+  display: flex;
+  flex-direction: row;
   flex: 1;
   min-height: 0;
 }
 
 .notes-sidebar {
-  width: 140px;
+  width: 150px;
   flex: none;
   border-right: 2px solid var(--color-border);
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 
 .notes-add {
@@ -680,6 +819,7 @@ body {
 .notes-editor {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }

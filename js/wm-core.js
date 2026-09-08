@@ -54,6 +54,40 @@ function startClock() {
   setInterval(tickClock, 1000);
 }
 
+/* ---------- favicon ---------- */
+
+// The static favicon.svg draws the Nerd Font glyph as <text>, but SVG
+// favicons render where document fonts may not apply. Once the font is
+// loaded, redraw the glyph onto a canvas and swap in a PNG data URL.
+const FAVICON_GLYPH = '\uf4ca'; // nf-oct-feed_person
+const FAVICON_BG = '#2d353b';
+const FAVICON_FG = '#a7c080';
+
+function renderFavicon() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.fillStyle = FAVICON_BG;
+  ctx.fillRect(0, 0, 64, 64);
+  ctx.fillStyle = FAVICON_FG;
+  ctx.font = '48px "Symbols Nerd Font"';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(FAVICON_GLYPH, 32, 34);
+  const link = document.querySelector('link[rel="icon"]');
+  if (link) link.href = canvas.toDataURL('image/png');
+}
+
+function initFavicon() {
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(renderFavicon);
+  } else {
+    renderFavicon();
+  }
+}
+
 /* ---------- state ---------- */
 
 const WORKSPACE_COUNT = 9;
@@ -1066,6 +1100,7 @@ function init() {
   bindMouse();
   window.addEventListener('resize', render);
   initLockScreen(); // lock on every page load (Spec §12)
+  initFavicon();
 
   render(); // initial paint: empty-workspace hint + pill
 }

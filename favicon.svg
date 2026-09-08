@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!--
+    pOS favicon: the nf-oct-feed_person Nerd Font glyph (U+F4CA) drawn as
+    text. NOTE: SVG favicons render in a context where document fonts may
+    not apply, so wm-core.js re-renders this via <canvas> at runtime once
+    the Nerd Font has loaded (see initFavicon) — this file is the
+    no-JS/degraded fallback.
+  -->
+  <style>
+    @font-face {
+      font-family: "Symbols Nerd Font";
+      src: url("assets/fonts/nerd-font-symbols.woff2") format("woff2");
+    }
+  </style>
+  <rect width="32" height="32" fill="#2d353b"/>
+  <text x="16" y="24" font-family="Symbols Nerd Font" font-size="22"
+        fill="#a7c080" text-anchor="middle">&#xf4ca;</text>
+</svg>

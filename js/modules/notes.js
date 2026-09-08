@@ -60,7 +60,12 @@ function mount(container, context) {
   editorEmpty.textContent = 'no notes — add one with +';
   editor.append(titleInput, bodyEl, editorEmpty);
 
-  container.append(title, sidebar, editor);
+  // sidebar + editor live in a row wrapper below the title
+  const body = document.createElement('div');
+  body.className = 'notes-body';
+  body.append(sidebar, editor);
+
+  container.append(title, body);
 
   /* ---- events ---- */
   addBtn.addEventListener('click', () => {
