@@ -42,6 +42,7 @@ import './themes.js';
 import './persistence.js';
 import './modules.js';
 import './modules/tasks.js';
+import './modules/storage.js';
 
 // Registry/theme/persistence APIs. The WM is a generic shell: it only
 // ever talks to the module *registry*, never to specific modules
@@ -88,6 +89,11 @@ const MIN_MASTER_RATIO = 0.2;
 const MAX_MASTER_RATIO = 0.8;
 const MIN_FLOAT_W = 160;
 const MIN_FLOAT_H = 100;
+// Outer gap (workspace edge -> windows) + inner gap (between windows).
+// Both derive from one constant: inner boundaries take HALF_GAP from
+// each adjacent window so inner gaps == WINDOW_GAP too.
+const WINDOW_GAP = 12;
+const HALF_GAP = WINDOW_GAP / 2;
 
 const state = {
   activeWorkspace: 0,
@@ -207,16 +213,24 @@ function toggleFloating(id) {
   const win = findWindow(id);
   if (!win || win.isFullscreen) return;
   if (win.state === 'tiled') {
-    // detach "in place": last tiled geometry becomes the initial
-    // floating geometry (Spec §5); remaining tiled windows reflow.
-    win.floatingGeometry = win._lastRect ?? { x: 60, y: 60, w: 480, h: 320 };
+    // Float: reuse the window's *remembered* floating geometry if it
+    // has one — floating position/size survives round-trips through
+    // tiling (Spec §5: "floating windows remember their position/size").
+    // The first-ever float detaches "in place" from the last tiled rect;
+    // remaining tiled windows reflow to fill the gap it left.
+    if (!win.floatingGeometry) {
+      win.floatingGeometry = win._lastRect ?? { x: 60, y: 60, w: 480, h: 320 };
+    }
     win.state = 'floating';
     if (ws.layoutMode === 'dwindle') {
       ws.dwindleTree = treeRemove(ws.dwindleTree, win.id); // collapse node
     }
   } else {
     win.state = 'tiled';
-    win.floatingGeometry = null; // tiled geometry is derived, not stored
+    // NOTE: floatingGeometry is deliberately *kept* here (not nulled):
+    // tiled geometry is derived at render time, so the stale value is
+    // inert while tiled — and it restores the old floating position the
+    // next time this window floats (Spec §5).
     if (ws.layoutMode === 'dwindle') {
       // re-enter the tiling tree by splitting a sibling's space
       const targetId = dwindleSplitTarget(ws, focusedWindowId, win.id);
@@ -351,14 +365,25 @@ function layoutDwindle(node, rect, out) {
     return;
   }
   const vertical = rect.w >= rect.h; // wide container -> split left/right
+  // Each internal split leaves an INNER gap: HALF_GAP is trimmed from
+  // each side of the boundary (outer edges get the full WINDOW_GAP from
+  // the workspace-area inset applied by render()).
   if (vertical) {
     const split = Math.round(rect.w * node.ratio);
-    layoutDwindle(node.left, { x: rect.x, y: rect.y, w: split, h: rect.h }, out);
-    layoutDwindle(node.right, { x: rect.x + split, y: rect.y, w: rect.w - split, h: rect.h }, out);
+    layoutDwindle(node.left, { x: rect.x, y: rect.y, w: split - HALF_GAP, h: rect.h }, out);
+    layoutDwindle(
+      node.right,
+      { x: rect.x + split + HALF_GAP, y: rect.y, w: rect.w - split - HALF_GAP, h: rect.h },
+      out
+    );
   } else {
     const split = Math.round(rect.h * node.ratio);
-    layoutDwindle(node.left, { x: rect.x, y: rect.y, w: rect.w, h: split }, out);
-    layoutDwindle(node.right, { x: rect.x, y: rect.y + split, w: rect.w, h: rect.h - split }, out);
+    layoutDwindle(node.left, { x: rect.x, y: rect.y, w: rect.w, h: split - HALF_GAP }, out);
+    layoutDwindle(
+      node.right,
+      { x: rect.x, y: rect.y + split + HALF_GAP, w: rect.w, h: rect.h - split - HALF_GAP },
+      out
+    );
   }
 }
 
@@ -469,28 +494,45 @@ function render() {
   const W = workspaceRoot.clientWidth;
   const H = workspaceRoot.clientHeight;
 
-  // Layout geometry, fully derived (Spec §4). master-stack: first
-  // tiled window is master (masterRatio width, full height); the rest
-  // split the right column into equal-height slices. dwindle: walk
-  // the per-workspace BSP tree.
+  // Layout geometry, fully derived (Spec §4). All tiling happens inside
+  // an area inset by WINDOW_GAP on every side (the outer gap); inner
+  // gaps between adjacent windows come from HALF_GAP trims at each
+  // internal boundary. master-stack: first tiled window is master
+  // (masterRatio width, full height); the rest split the right column
+  // into equal-height slices. dwindle: walk the per-workspace BSP tree.
   const tiled = tiledWindows(ws);
   const rects = new Map();
+  // skip the gap on tiny viewports where it would eat the layout
+  const gap = W > 200 && H > 200 ? WINDOW_GAP : 0;
+  const area = { x: gap, y: gap, w: W - 2 * gap, h: H - 2 * gap };
   if (ws.layoutMode === 'dwindle' && ws.dwindleTree) {
-    layoutDwindle(ws.dwindleTree, { x: 0, y: 0, w: W, h: H }, rects);
+    layoutDwindle(ws.dwindleTree, area, rects);
   } else if (tiled.length === 1) {
-    rects.set(tiled[0].id, { x: 0, y: 0, w: W, h: H });
+    rects.set(tiled[0].id, area);
   } else if (tiled.length > 1) {
-    const masterW = Math.round(W * ws.masterRatio);
-    rects.set(tiled[0].id, { x: 0, y: 0, w: masterW, h: H });
+    const masterW = Math.round(area.w * ws.masterRatio);
+    rects.set(tiled[0].id, {
+      x: area.x,
+      y: area.y,
+      w: masterW - HALF_GAP,
+      h: area.h,
+    });
+    const stackX = area.x + masterW + HALF_GAP;
+    const stackW = area.w - masterW - HALF_GAP;
     const stack = tiled.slice(1);
-    const sliceH = H / stack.length;
+    const sliceH = area.h / stack.length;
     stack.forEach((w, i) => {
-      const y = Math.round(i * sliceH);
+      // inner gaps between stack slices: HALF_GAP above/below, except
+      // at the area's outer top/bottom edges (already inset)
+      const padTop = i > 0 ? HALF_GAP : 0;
+      const padBottom = i < stack.length - 1 ? HALF_GAP : 0;
+      const y = Math.round(i * sliceH) + padTop;
       rects.set(w.id, {
-        x: masterW,
+        x: stackX,
         y,
-        w: W - masterW,
-        h: Math.round((i + 1) * sliceH) - y, // avoids 1px gaps from rounding
+        w: stackW,
+        // rounding-aware slice height (avoids 1px gaps from rounding)
+        h: Math.round((i + 1) * sliceH) - Math.round(i * sliceH) - padTop - padBottom,
       });
     });
   }
@@ -750,10 +792,12 @@ function onDragMove(e) {
     el.style.width = `${Math.max(MIN_FLOAT_W, startW + (e.clientX - startX))}px`;
     el.style.height = `${Math.max(MIN_FLOAT_H, startH + (e.clientY - startY))}px`;
   } else if (activeDrag.type === 'ratio') {
-    // live master/stack ratio follows the pointer (Spec §11)
+    // live master/stack ratio follows the pointer (Spec §11), measured
+    // against the gapped tiling area (not the raw root width)
     const { rootRect } = activeDrag;
+    const usableW = Math.max(1, rootRect.width - 2 * WINDOW_GAP);
     currentWorkspace().masterRatio = clamp(
-      (e.clientX - rootRect.left) / rootRect.width,
+      (e.clientX - rootRect.left - WINDOW_GAP) / usableW,
       MIN_MASTER_RATIO,
       MAX_MASTER_RATIO
     );

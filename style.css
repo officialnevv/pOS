@@ -559,3 +559,153 @@ body {
    persistence (Spec §9), which lands with a later phase.
    --------------------------------------------------------------- */
 
+/* ---------------------------------------------------------------
+   Storage module — local file/folder manager (client-only; contents
+   persist as data URLs under moduleData.storage, Spec §8/§9).
+   --------------------------------------------------------------- */
+.storage {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.storage-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.storage-btn {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.storage-btn:hover {
+  border-color: var(--color-accent);
+}
+
+.storage-breadcrumb {
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-border);
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.storage-crumb {
+  cursor: pointer;
+  color: var(--color-fg);
+  opacity: 0.75;
+}
+
+.storage-crumb:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.storage-crumb.current {
+  color: var(--color-accent);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.storage-sep {
+  margin: 0 6px;
+}
+
+.storage-warning {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--color-accent);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.storage-warning.error {
+  color: var(--color-accent-secondary);
+}
+
+.storage-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.storage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+}
+
+.storage-row:hover {
+  background: color-mix(in srgb, var(--color-border) 30%, transparent);
+}
+
+.storage-row-icon {
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 14px;
+  color: var(--color-accent);
+  width: 18px;
+  text-align: center;
+  flex: none;
+}
+
+.storage-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.storage-name:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.storage-meta {
+  flex: none;
+  font-size: 12px;
+  color: var(--color-border);
+}
+
+.storage-actions {
+  flex: none;
+  display: flex;
+  gap: 4px;
+}
+
+.storage-action {
+  background: transparent;
+  border: 2px solid transparent;
+  color: var(--color-border);
+  font: inherit;
+  padding: 0 4px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.storage-action:hover {
+  color: var(--color-accent);
+  border-color: var(--color-border);
+}
+
+.storage-empty {
+  padding: 16px 12px;
+  color: var(--color-border);
+  text-align: center;
+}
