@@ -6,20 +6,36 @@
  * Everything lives under a single JSON key, 'personal-os-state':
  *   { activeWorkspace, activeTheme, workspaces: {...}, moduleData: {...} }
  *
- * Right now this module serves the moduleData slice: modules persist
- * their own data keyed by module id (Spec §9 — modules own their data
- * independent of window/layout state). The loadState/saveState hooks
- * for full WM state (windows, workspaces, theme) are in place for the
- * upcoming persistence phase.
+ * Modules persist their own data keyed by module id (Spec §9 — modules
+ * own their data independent of window/layout state). Stale moduleData
+ * slices whose module is no longer registered are pruned on load (and
+ * thus drop out of the blob on the next save), so the persistence shape
+ * never accumulates keys for removed modules.
  */
 
+import { getAllModules } from './modules.js';
+
 const STATE_KEY = 'personal-os-state';
+
+/** Drop moduleData slices whose module is no longer registered. */
+function pruneModuleData(state) {
+  if (!state || typeof state !== 'object' || state.moduleData == null) {
+    return state;
+  }
+  const known = new Set(getAllModules().map((m) => m.id));
+  return {
+    ...state,
+    moduleData: Object.fromEntries(
+      Object.entries(state.moduleData).filter(([id]) => known.has(id))
+    ),
+  };
+}
 
 /** Read + parse the persisted state (or null when absent/corrupt). */
 export function loadState() {
   try {
     const raw = localStorage.getItem(STATE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? pruneModuleData(JSON.parse(raw)) : null;
   } catch {
     return null; // corrupt JSON — treat as no saved state
   }

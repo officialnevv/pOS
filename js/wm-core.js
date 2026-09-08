@@ -6,8 +6,9 @@
  * This file is the generic tiling-WM shell (Spec §3–5, §10–11). It knows
  * nothing about individual modules — it only consumes the registry
  * (modules.js), themes (themes.js), and persistence (persistence.js).
- * Individual modules are pulled in as side-effect imports below so they
- * register themselves at load time.
+ * Modules (if any are installed) are pulled in as side-effect imports
+ * below so they register themselves at load time; the registry is
+ * currently empty.
  *
  * Implemented:
  *   - Workspace state: 9 workspaces, each with its own windows,
@@ -38,12 +39,12 @@
  */
 
 // Side-effect imports: modules register themselves with the registry.
+// (Currently none — the registry is empty and ready for real modules.
+// Add a module by creating js/modules/<name>.js that calls
+// registerModule(), then importing it here as a side effect.)
 import './themes.js';
 import './persistence.js';
 import './modules.js';
-import './modules/tasks.js';
-import './modules/storage.js';
-import './modules/watch-later.js';
 
 // Registry/theme/persistence APIs. The WM is a generic shell: it only
 // ever talks to the module *registry*, never to specific modules

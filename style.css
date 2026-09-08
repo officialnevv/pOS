@@ -336,7 +336,7 @@ body {
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 4px 10px;
+  padding: 4px 4px; /* tight horizontal padding: icons hug the pill ends */
   background: var(--color-bg);
   border: 2px solid var(--color-border);
   z-index: 900;
@@ -349,6 +349,15 @@ body {
   color: var(--color-border);
   cursor: pointer;
   padding: 0 6px;
+}
+
+/* the two edge icons sit closer to the pill's outer edges (amendment) */
+.pill-icon:first-child {
+  padding-left: 2px;
+}
+
+.pill-icon:last-child {
+  padding-right: 2px;
 }
 
 .pill-icon:hover {
