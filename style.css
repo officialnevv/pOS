@@ -906,7 +906,9 @@ body {
 
 /* ---------------------------------------------------------------
    Pomodoro module — live focus timer (Spec §8, amendment). Not
-   persisted: session-only state, resets on page load.
+   persisted: session-only state, resets on page load. Centerpiece:
+   SVG progress ring with the countdown in its center; the ring
+   depletes as the phase counts down and refills on phase switch.
    --------------------------------------------------------------- */
 .pomodoro {
   flex: 1;
@@ -920,13 +922,43 @@ body {
   padding: 10px 12px;
 }
 
+/* --- progress ring (SVG) --- */
+.pomodoro-ring {
+  margin-top: 12px; /* breathing room under the title bar */
+  width: 180px;
+  max-width: 100%;
+  height: auto;
+  /* progress stroke follows the phase: green work, orange break
+     (the progress circle strokes currentColor) */
+  color: var(--color-accent);
+}
+
+.pomodoro-ring.break {
+  color: var(--color-accent-secondary);
+}
+
+.pomodoro-ring-track {
+  fill: none;
+  stroke: var(--color-border);
+  stroke-width: 6;
+}
+
+.pomodoro-ring-progress {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 6;
+  /* per-second dashoffset updates glide instead of stepping; the
+     reset/phase-switch refill sweeps in over the same duration */
+  transition: stroke-dashoffset 0.9s linear;
+}
+
 .pomodoro-time {
-  margin-top: 16px; /* breathing room under the title bar */
-  font-size: 44px;
+  font: inherit;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
-  line-height: 1.1; /* digits keep vertical air (1 packed them tight) */
+  fill: var(--color-fg);
 }
 
 /* visual cue when the timer switches work <-> break on its own */
@@ -935,23 +967,23 @@ body {
 }
 
 @keyframes pomodoro-flash {
-  0%, 100% { color: var(--color-fg); }
-  40% { color: var(--color-accent); transform: scale(1.06); }
+  0%, 100% { fill: var(--color-fg); }
+  40% { fill: var(--color-accent); }
 }
 
 .pomodoro-phase {
-  margin-top: 10px; /* clear, even gap under the timer digits */
-  font-size: 12px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
+  fill: var(--color-border);
 }
 
 .pomodoro-phase.work {
-  color: var(--color-accent);
+  fill: var(--color-accent);
 }
 
 .pomodoro-phase.break {
-  color: var(--color-accent-secondary);
+  fill: var(--color-accent-secondary);
 }
 
 .pomodoro-controls {
@@ -965,14 +997,24 @@ body {
   border: 2px solid var(--color-border);
   color: var(--color-accent);
   font: inherit;
+  font-size: 12px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   padding: 4px 14px;
   cursor: pointer;
   border-radius: 0;
+  transition: border-color 0.1s ease, color 0.1s ease;
 }
 
 .pomodoro-btn:hover {
   border-color: var(--color-accent);
+}
+
+/* running state: accent border so "pause" reads as active */
+.pomodoro-btn.running {
+  border-color: var(--color-accent);
+  color: var(--color-fg);
 }
 
 .pomodoro-config {
@@ -984,26 +1026,61 @@ body {
   justify-content: center;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 24px;
   font-size: 12px;
   color: var(--color-border);
 }
 
-.pomodoro-config input {
-  width: 56px;
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-fg);
-  font: inherit;
-  padding: 2px 6px;
-  border-radius: 0;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+/* custom +/- steppers — no native number inputs (their spinner
+   arrows don't reskin across themes). Label sits on its own line
+   above the [-] N [+] controls row. */
+.pomodoro-stepper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
-.pomodoro-config input:focus {
-  outline: none;
+.pomodoro-stepper-label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.pomodoro-step-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pomodoro-step-btn {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 0;
+  transition: border-color 0.1s ease, color 0.1s ease;
+}
+
+.pomodoro-step-btn:hover {
   border-color: var(--color-accent);
+}
+
+.pomodoro-step-value {
+  min-width: 3ch;
+  text-align: center;
+  color: var(--color-fg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------------------------------------------------------------
