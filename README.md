@@ -46,7 +46,7 @@ Mouse support exists but it's the convenience layer, not the point. Hovering a w
 ## What's in it
 
 - 9 workspaces, each with its own windows and dwindle split state; the pill at the bottom shows what's populated
-- Dwindle (Hyprland-style BSP) tiling
+- Dwindle (Hyprland-style BSP) tiling — each split's orientation is fixed at creation, so resizing one boundary never rearranges other windows
 - Floating windows that remember their position through tile/float round-trips, and a fullscreen mode that doesn't disturb anything underneath
 - 11 themes (Everforest by default, plus the usual suspects, Gruvbox, Nord, Dracula, Catppuccin, etc.), switchable at runtime from the pill
 - Gaps between windows, because borderless tiling looks bad without them

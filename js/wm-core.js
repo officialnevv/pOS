@@ -142,10 +142,12 @@ function openWindow(moduleId) {
   // existing tiled windows first; the very first window just becomes the
   // tree's leaf via treeInsert's null short-circuit).
   ensureDwindleTree(ws);
+  const targetId = dwindleSplitTarget(ws, prevFocusId, win.id);
   ws.dwindleTree = treeInsert(
     ws.dwindleTree,
-    dwindleSplitTarget(ws, prevFocusId, win.id),
-    win.id
+    targetId,
+    win.id,
+    measureSplitAxis(ws, targetId)
   );
   ws.windows.push(win);
   persistState();
@@ -234,7 +236,12 @@ function toggleFloating(id) {
     // derived at render time) and restores the old floating position on
     // the next Alt+V.
     const targetId = dwindleSplitTarget(ws, focusedWindowId, win.id);
-    ws.dwindleTree = treeInsert(ws.dwindleTree, targetId, win.id);
+    ws.dwindleTree = treeInsert(
+      ws.dwindleTree,
+      targetId,
+      win.id,
+      measureSplitAxis(ws, targetId)
+    );
   }
   persistState();
   render();
@@ -318,9 +325,8 @@ function findBorderAt(px, py) {
  * window's ancestor splits are resolved at mousedown, entirely from
  * measured on-screen geometry:
  *
- *   axisV -> the nearest vertical split (a left/right divide, wide/tall
- *            rule as layoutDwindle) — its line follows HORIZONTAL mouse
- *            movement
+ *   axisV -> the nearest vertical split (a left/right divide) — its line
+ *            follows HORIZONTAL mouse movement
  *   axisH -> the nearest horizontal split (a top/bottom divide) — its
  *            line follows VERTICAL mouse movement
  *
@@ -350,7 +356,7 @@ function tiledSplitDrag(win, e) {
   if (!path.length) return null; // single tiled window: nothing to split
 
   // a split node's container = bounding rect of its subtree's leaves
-  // (render-time geometry); axis uses the same wide/tall rule layoutDwindle
+  // (render-time geometry); the axis comes from the node itself
   const containerOf = (n) => {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const id of treeLeaves(n)) {
@@ -364,7 +370,9 @@ function tiledSplitDrag(win, e) {
     if (x1 <= x0 || y1 <= y0) return null;
     const w = x1 - x0;
     const h = y1 - y0;
-    return { x0, y0, w, h, axis: w >= h ? 'v' : 'h' };
+    // the axis comes from the node (frozen at split creation) — the
+    // container extent comes from the rendered leaves
+    return { x0, y0, w, h, axis: n.axis === 'h' ? 'h' : 'v' };
   };
 
   // nearest (innermost) ancestor per axis: path runs outermost ->
@@ -439,10 +447,12 @@ function moveFocusedToWorkspace(id, targetIdx) {
   const [win] = from.windows.splice(idx, 1);
   from.dwindleTree = treeRemove(from.dwindleTree, win.id); // collapse node
   to.windows.push(win); // newest dwindle leaf
+  const targetId = treeFirstLeaf(to.dwindleTree);
   to.dwindleTree = treeInsert(
     to.dwindleTree,
-    treeFirstLeaf(to.dwindleTree),
-    win.id
+    targetId,
+    win.id,
+    measureSplitAxis(to, targetId)
   );
   state.activeWorkspace = targetIdx;
   focusedWindowId = win.id;
@@ -452,21 +462,27 @@ function moveFocusedToWorkspace(id, targetIdx) {
 
 /* ---------- dwindle layout (Spec §4) ----------
    Hyprland-style BSP: a per-workspace binary tree whose leaves are
-   window ids. Internal nodes store their split ratio (default 0.5);
-   the split *axis* is chosen at layout time from the container's
-   aspect ratio (wide = left/right, tall = top/bottom), so the same
-   tree reflows correctly when the viewport resizes. A new window
-   splits the node of the currently focused window. */
+   window ids. Internal nodes store their split ratio (default 0.5) AND
+   their split axis ('v' = left/right, 'h' = top/bottom), fixed when the
+   split is created from the container's aspect ratio at that moment —
+   exactly like Hyprland. The axis is never re-derived afterwards: a
+   resize drag must only ever change the one ratio being dragged, never
+   re-orient other splits (which would rearrange whole subtrees as a
+   side effect). A new window splits the node of the currently focused
+   window. */
 
-function treeInsert(node, targetId, newId) {
+function treeInsert(node, targetId, newId, axis = 'v') {
   if (node == null) return newId; // first window in the workspace
   if (typeof node === 'number') {
-    return node === targetId ? { left: node, right: newId, ratio: 0.5 } : node;
+    return node === targetId
+      ? { left: node, right: newId, ratio: 0.5, axis }
+      : node;
   }
   return {
-    left: treeInsert(node.left, targetId, newId),
-    right: treeInsert(node.right, targetId, newId),
+    left: treeInsert(node.left, targetId, newId, axis),
+    right: treeInsert(node.right, targetId, newId, axis),
     ratio: node.ratio,
+    axis: node.axis,
   };
 }
 
@@ -476,7 +492,7 @@ function treeRemove(node, id) {
   const right = treeRemove(node.right, id);
   if (left === null) return right; // collapse: sibling takes the space
   if (right === null) return left;
-  return { left, right, ratio: node.ratio };
+  return { left, right, ratio: node.ratio, axis: node.axis };
 }
 
 function treeSwap(node, aId, bId) {
@@ -487,6 +503,7 @@ function treeSwap(node, aId, bId) {
     left: treeSwap(node.left, aId, bId),
     right: treeSwap(node.right, aId, bId),
     ratio: node.ratio,
+    axis: node.axis,
   };
 }
 
@@ -501,7 +518,10 @@ function layoutDwindle(node, rect, out) {
     out.set(node, rect);
     return;
   }
-  const vertical = rect.w >= rect.h; // wide container -> split left/right
+  // the axis is frozen on the node at split creation (never re-derived
+  // from the container's aspect — re-orientation mid-resize would
+  // rearrange whole subtrees as a side effect of dragging one boundary)
+  const vertical = node.axis !== 'h';
   // Each internal split leaves an INNER gap: HALF_GAP is trimmed from
   // each side of the boundary (outer edges get the full WINDOW_GAP from
   // the workspace-area inset applied by render()).
@@ -537,16 +557,53 @@ function dwindleSplitTarget(ws, preferredId, excludeId = null) {
   );
 }
 
-/** Toggle the current workspace's tiling mode (pill icon, Spec §3/§4). */
+/** Frozen axis for a new split node created around `targetId`: the same
+ * wide/tall rule the layout uses, measured from the target's current
+ * rendered rect. Defaults to 'v' when no geometry exists yet (e.g. the
+ * workspace has never been rendered). */
+function measureSplitAxis(ws, targetId) {
+  const r = ws.windows.find((w) => w.id === targetId)?._lastRect;
+  return r && r.h > 0 ? (r.w >= r.h ? 'v' : 'h') : 'v';
+}
+
 /** Ensure the workspace has a BSP tree covering its tiled windows.
  * Rebuilds from tiling order when the tree is missing (legacy state
  * restored before dwindle became the only layout). */
 function ensureDwindleTree(ws) {
   if (ws.dwindleTree) return;
   let prev = null;
+  let depth = 0;
   for (const w of tiledWindows(ws)) {
-    ws.dwindleTree = treeInsert(ws.dwindleTree, prev, w.id);
+    // alternate axes by depth — reproduces the classic dwindle pattern
+    // (root splits left/right, the next container top/bottom, ...)
+    ws.dwindleTree = treeInsert(
+      ws.dwindleTree,
+      prev,
+      w.id,
+      depth % 2 === 0 ? 'v' : 'h'
+    );
     prev = w.id;
+    depth++;
+  }
+}
+
+/** Fill in missing split axes (legacy trees saved before axes were
+ * persisted) by propagating the workspace's aspect down the tree with
+ * the same wide/tall rule the old dynamic layout used, so a legacy
+ * restore reproduces the layout that was on screen before the upgrade.
+ * Trees saved in the current format already carry axes and pass through
+ * untouched. */
+function normalizeTreeAxes(node, w, h) {
+  if (!node || typeof node === 'number') return;
+  if (!node.axis) node.axis = w >= h ? 'v' : 'h';
+  if (node.axis === 'v') {
+    const split = w * node.ratio;
+    normalizeTreeAxes(node.left, split, h);
+    normalizeTreeAxes(node.right, w - split, h);
+  } else {
+    const split = h * node.ratio;
+    normalizeTreeAxes(node.left, w, split);
+    normalizeTreeAxes(node.right, w, h - split);
   }
 }
 
@@ -756,6 +813,15 @@ function restoreState() {
       ws.dwindleTree = tree;
     }
     ensureDwindleTree(ws); // legacy tree-less states: rebuild from order
+    // legacy trees persisted before splits carried an axis: derive each
+    // missing axis symbolically from the workspace aspect (the same
+    // wide/tall rule the old dynamic layout used), so the restored
+    // layout matches what was on screen before the upgrade
+    normalizeTreeAxes(
+      ws.dwindleTree,
+      workspaceRoot.clientWidth,
+      workspaceRoot.clientHeight
+    );
   }
   nextWindowId = maxId + 1;
 
@@ -1232,10 +1298,12 @@ function closeThemePicker() {
  * behavior. Workspaces start empty — Alt+W opens the launcher.
  */
 function init() {
+  // Element refs FIRST: restoreState()'s legacy-axis migration measures
+  // the workspace root (Spec §9), and render() needs it too.
+  workspaceRoot = document.getElementById('workspace-root');
   applyTheme(restoreState()); // restore WM state + theme (Spec §9)
   startClock();
 
-  workspaceRoot = document.getElementById('workspace-root');
   bindKeybinds();
   bindMouse();
   window.addEventListener('resize', render);
