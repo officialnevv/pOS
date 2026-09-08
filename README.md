@@ -1,62 +1,59 @@
 # pOS
 
-**pOS** is a personal dashboard that works like a tiling window manager — think dwm/i3/Hyprland, but running entirely in your browser tab. "Apps" are modules rendered as tiled or floating windows inside the page: 9 independent workspaces, dwindle (BSP) or master-stack tiling, keyboard-driven window management, runtime-switchable color themes, and a lock screen. It ships with an empty module registry by design — the window manager is a generic shell, and any "app" (to-do list, notes, launcher-driven tools) can be plugged in as a self-contained module without touching the core.
+I wanted a personal dashboard that behaved like my Linux setup, so I built one: a tiling window manager that runs in a browser tab. There's no desktop environment underneath, pOS itself draws the windows, the workspaces, and the bar. "Apps" are just modules that render into those windows, and the whole thing lives in one browser tab with no server behind it.
 
-## Tech Stack
+I built it mostly because I wanted to. It's how I like to organize scratch stuff, lists, notes, whatever I end up plugging into it, and I prefer keyboard-driven tiling to clicking floating cards around. If that sounds like you too, read on.
 
-- **Vanilla HTML / CSS / JavaScript** — no framework, no build step, no bundler, no npm dependencies.
-- ES modules, organized by concern (`wm-core.js`, `modules.js`, `themes.js`, `persistence.js`, `lockscreen.js`).
-- State persists in a single `localStorage` JSON blob (`personal-os-state`); single-user, client-only, no backend, no accounts.
-- Self-hosted fonts (Geist Mono, JetBrains Mono, Nerd Font symbols) in `assets/fonts/` — fully offline-capable.
+## What it is
 
-## Running Locally
+Under the hood it's a generic window manager shell: 9 workspaces, dwindle (BSP) or master-stack tiling, floating windows, fullscreen overlays, a module launcher, theming, and a lock screen. The WM core knows nothing about individual apps, modules register themselves with a central registry, and the registry is intentionally empty right now. When I want a new "app," I drop a file in `js/modules/`, call `registerModule()`, add one import, and it shows up in the launcher.
 
-Because the app uses ES modules, it must be served over HTTP (opening `index.html` via `file://` will be blocked by the browser). Any trivial static server works:
+## Tech
 
-```bash
-# Python
-python -m http.server 8080
-# then open http://localhost:8080
+Plain HTML, CSS, and JavaScript. No framework, no build step, no bundler, no dependencies, I didn't want this to rot the way npm projects do when you come back to them two years later. Everything persists to a single `localStorage` blob, and the fonts (Geist Mono, JetBrains Mono, Nerd Font symbols) are self-hosted in `assets/fonts/`, so it works fully offline.
 
-# or Node
+## Running it
+
+It uses ES modules, so you can't just double-click `index.html`, browsers block module loading over `file://`. Serve the folder with anything static:
+
+```
+python -m http.server 8080     # then open http://localhost:8080
 npx serve .
 ```
 
-…or use the **VS Code "Live Server"** extension ("Open with Live Server" on `index.html`).
+or use the VS Code Live Server extension if that's already in your setup.
 
-On load you'll be greeted by the lock screen — the PIN is **464466** (hardcoded client-side; it's a soft deterrent, not security — see Spec §12). It auto-unlocks as soon as the PIN is fully typed.
+The page loads locked. The PIN is <000000>, it's hardcoded client-side, so it's a speed bump, not security. It unlocks the moment you finish typing it.
 
 ## Keybinds
 
 | Keybind | Action |
 |---|---|
-| `Alt + H / J / K / L` | Cycle focus between windows (left/down/up/right) |
-| `Alt + Shift + H / J / K / L` | Resize master/stack ratio (or the focused dwindle split) in that direction |
-| `Alt + W` | Promote focused window to master (swaps with current master) |
-| `Alt + V` | Toggle focused window between tiling and floating |
-| `Alt + F` | Toggle fullscreen/maximize for the focused window |
-| `Alt + Q` | Close focused window |
+| `Alt + H / J / K / L` | Cycle focus between windows |
+| `Alt + Shift + H / J / K / L` | Resize the master/stack ratio (or the focused dwindle split) |
+| `Alt + W` | Promote the focused window to master |
+| `Alt + V` | Toggle the focused window between tiled and floating |
+| `Alt + F` | Toggle fullscreen for the focused window |
+| `Alt + Q` | Close the focused window |
 | `Alt + Enter` | Open the module launcher |
 | `Alt + 1` – `Alt + 9` | Switch to workspace 1–9 |
 | `Alt + Shift + 1` – `Alt + Shift + 9` | Move the focused window to workspace 1–9 (the view follows it) |
 
-## Mouse Controls
+All of these call `preventDefault()` so the browser doesn't eat them.
 
-- **Focus-follows-hover** — moving the mouse over a window focuses it (no click needed).
-- **`Alt + Left-Click` + drag** — on a floating window: move it freely; on a tiled window: swap it with the window you drop it onto.
-- **`Alt + Right-Click` + drag** — on a floating window: resize it; on a tiled window: adjust the master/stack ratio (or dwindle split) in that direction.
-- Plain clicks work normally everywhere else (launcher entries, theme picker, pill icons, module content).
+## Mouse
 
-## Features
+Mouse support exists but it's the convenience layer, not the point. Hovering a window focuses it. `Alt + Left-Click` drag moves a floating window, or swaps a tiled window with whatever you drop it on. `Alt + Right-Click` drag resizes a floating window, or adjusts the split ratio on a tiled one. Everything else, launcher, theme picker, checking things off inside modules, works with plain clicks.
 
-- **9 workspaces** (`Alt+1`–`9`), each with its own windows, layout mode, and split state; the bottom pill shows workspace slots (1–3 always, 4–9 only while populated) plus layout/theme toggles.
-- **Two tiling layouts**, toggleable per workspace: **dwindle** (Hyprland-style BSP, the default) and **master-stack** (55/45 with an adjustable ratio); outer + inner gaps between windows.
-- **Floating & fullscreen windows** — floating geometry is remembered across tile/float round-trips; fullscreen is a non-destructive overlay.
-- **Singleton modules** — a module can only be open once across all workspaces; relaunching focuses the existing window.
-- **11 themes** (Everforest, Gruvbox, Nord, Dracula, Catppuccin Mocha, Solarized Dark/Light, Tokyo Night, One Dark, Rosé Pine, Monokai) — switchable instantly at runtime via the pill's theme icon.
-- **Lock screen** on every page load, theme-aware, auto-unlock with fade-out.
-- **Module architecture (Spec §8)** — the registry is intentionally empty; a new module is one file under `js/modules/` calling `registerModule()` plus one side-effect import in `wm-core.js`, with zero changes to the WM core.
+## What's in it
 
-## Scope
+- 9 workspaces, each with its own windows and layout; the pill at the bottom shows what's populated
+- Dwindle (Hyprland-style BSP) as the default layout, master-stack as the alternative, toggleable per workspace from the pill
+- Floating windows that remember their position through tile/float round-trips, and a fullscreen mode that doesn't disturb anything underneath
+- 11 themes (Everforest by default, plus the usual suspects, Gruvbox, Nord, Dracula, Catppuccin, etc.), switchable at runtime from the pill
+- Gaps between windows, because borderless tiling looks bad without them
+- A lock screen on every page load
 
-pOS is a **personal, single-user project** — it runs entirely client-side with no backend and is not intended for multi-user or production deployment. State lives unencrypted in your browser's localStorage.
+## Notes
+
+This is a personal, single-user thing. There's no backend, no accounts, and the localStorage state isn't encrypted, I wouldn't deploy this anywhere or trust it with anything you care about losing. It does what I need on my machine, in my browser.

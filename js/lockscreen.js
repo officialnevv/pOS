@@ -11,7 +11,7 @@
  *   - Full-screen, theme-aware overlay covering everything (shown on
  *     every page load via initLockScreen(), Spec §12).
  *   - "pOS" is a display label, NOT an editable input.
- *   - PIN: 464466. AUTO-UNLOCK the moment the correct PIN is fully
+ *   - PIN: 000000. AUTO-UNLOCK the moment the correct PIN is fully
  *     entered — no Enter required (amendment #1). The overlay fades
  *     out via a CSS opacity transition instead of vanishing instantly.
  *   - Wrong PIN -> brief error text + shake animation + input cleared;
@@ -23,7 +23,7 @@
  * (e.g. Alt+Shift+P) or a small top-bar icon if wanted.
  */
 
-const LOCK_PIN = '464466';
+const LOCK_PIN = '000000';
 const FADE_MS = 400; // keep in sync with the #lock-screen CSS transition
 
 let lockOverlay = null;
