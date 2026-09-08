@@ -17,9 +17,8 @@
  *   - Wrong PIN -> brief error text + shake animation + input cleared;
  *     no lockout, no limiting. Enter still works as a redundant submit.
  *
- * NOTE: the spec's optional manual-lock example (Alt+Shift+L) collides
- * with the Spec §10 resize keybind Alt+Shift+L, so lockNow() is
- * exported but intentionally unbound. Wire it to any spare key later
+ * NOTE: lockNow() is exported but intentionally unbound (the spec's
+ * manual-lock trigger is optional). Wire it to any spare key later
  * (e.g. Alt+Shift+P) or a small top-bar icon if wanted.
  */
 

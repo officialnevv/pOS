@@ -6,7 +6,7 @@ I built it mostly because I wanted to. It's how I like to organize scratch stuff
 
 ## What it is
 
-Under the hood it's a generic window manager shell: 9 workspaces, dwindle (BSP) or master-stack tiling, floating windows, fullscreen overlays, a module launcher, theming, and a lock screen. The WM core knows nothing about individual apps, modules register themselves with a central registry, and the registry is intentionally empty right now. When I want a new "app," I drop a file in `js/modules/`, call `registerModule()`, add one import, and it shows up in the launcher.
+Under the hood it's a generic window manager shell: 9 workspaces, dwindle (BSP) tiling, floating windows, fullscreen overlays, a module launcher, theming, and a lock screen. The WM core knows nothing about individual apps, modules register themselves with a central registry, and the registry is intentionally empty right now. When I want a new "app," I drop a file in `js/modules/`, call `registerModule()`, add one import, and it shows up in the launcher.
 
 ## Tech
 
@@ -30,12 +30,10 @@ The page loads locked. The PIN is 000000, it's hardcoded client-side, so it's a 
 | Keybind | Action |
 |---|---|
 | `Alt + H / J / K / L` | Cycle focus between windows |
-| `Alt + Shift + H / J / K / L` | Resize the master/stack ratio (or the focused dwindle split) |
-| `Alt + W` | Promote the focused window to master |
 | `Alt + V` | Toggle the focused window between tiled and floating |
 | `Alt + F` | Toggle fullscreen for the focused window |
 | `Alt + Q` | Close the focused window |
-| `Alt + Enter` | Open the module launcher |
+| `Alt + W` | Open the module launcher |
 | `Alt + 1` – `Alt + 9` | Switch to workspace 1–9 |
 | `Alt + Shift + 1` – `Alt + Shift + 9` | Move the focused window to workspace 1–9 (the view follows it) |
 
@@ -43,12 +41,12 @@ All of these call `preventDefault()` so the browser doesn't eat them.
 
 ## Mouse
 
-Mouse support exists but it's the convenience layer, not the point. Hovering a window focuses it. `Alt + Left-Click` drag moves a floating window, or swaps a tiled window with whatever you drop it on. `Alt + Right-Click` drag resizes a floating window, or adjusts the split ratio on a tiled one. Everything else, launcher, theme picker, checking things off inside modules, works with plain clicks.
+Mouse support exists but it's the convenience layer, not the point. Hovering a window focuses it. `Alt + Left-Click` drag moves a floating window, or swaps a tiled window with whatever you drop it on. `Alt + Right-Click` drag resizes a floating window, or adjusts the dwindle split on a tiled one. Everything else, launcher, theme picker, checking things off inside modules, works with plain clicks.
 
 ## What's in it
 
-- 9 workspaces, each with its own windows and layout; the pill at the bottom shows what's populated
-- Dwindle (Hyprland-style BSP) as the default layout, master-stack as the alternative, toggleable per workspace from the pill
+- 9 workspaces, each with its own windows and dwindle split state; the pill at the bottom shows what's populated
+- Dwindle (Hyprland-style BSP) tiling
 - Floating windows that remember their position through tile/float round-trips, and a fullscreen mode that doesn't disturb anything underneath
 - 11 themes (Everforest by default, plus the usual suspects, Gruvbox, Nord, Dracula, Catppuccin, etc.), switchable at runtime from the pill
 - Gaps between windows, because borderless tiling looks bad without them

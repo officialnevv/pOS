@@ -105,9 +105,9 @@ function mount(container, context) {
       empty(`no ${filter}-priority tasks`);
       return;
     }
-    for (const item of visible) {
-      list.appendChild(renderRow(item));
-      if (expanded === item) list.appendChild(renderEditor(item));
+    for (let i = 0; i < visible.length; i++) {
+      list.appendChild(renderRow(visible[i], i, visible.length));
+      if (expanded === visible[i]) list.appendChild(renderEditor(visible[i]));
     }
   }
 
@@ -118,7 +118,7 @@ function mount(container, context) {
     list.appendChild(li);
   }
 
-  function renderRow(item) {
+  function renderRow(item, index, visibleCount) {
     const li = document.createElement('li');
     li.className = 'task-item' + (item.done ? ' done' : '');
 
@@ -186,8 +186,41 @@ function mount(container, context) {
       renderList();
     });
 
-    li.append(check, main, expand, removeBtn);
+    // manual reordering: array order IS the display order, so moving a
+    // task swaps its position with the neighbouring *visible* task
+    // (filter-aware: with a priority filter active, the task moves past
+    // the nearest entry that is actually on screen)
+    const moveUp = document.createElement('button');
+    moveUp.type = 'button';
+    moveUp.className = 'task-move';
+    moveUp.textContent = CARET_UP;
+    moveUp.title = 'move up';
+    moveUp.disabled = index === 0;
+    moveUp.addEventListener('click', () => moveTask(item, -1));
+    const moveDown = document.createElement('button');
+    moveDown.type = 'button';
+    moveDown.className = 'task-move';
+    moveDown.textContent = CARET_DOWN;
+    moveDown.title = 'move down';
+    moveDown.disabled = index === visibleCount - 1;
+    moveDown.addEventListener('click', () => moveTask(item, +1));
+
+    li.append(check, main, moveUp, moveDown, expand, removeBtn);
     return li;
+  }
+
+  function moveTask(item, dir) {
+    const visible = filter === 'all'
+      ? items
+      : items.filter((it) => it.priority === filter);
+    const neighbor = visible[visible.indexOf(item) + dir];
+    if (!neighbor) return; // already at the edge of the (visible) list
+    const from = items.indexOf(item);
+    const to = items.indexOf(neighbor);
+    if (from === -1 || to === -1) return;
+    [items[from], items[to]] = [items[to], items[from]];
+    persist();
+    renderList();
   }
 
   function renderEditor(item) {

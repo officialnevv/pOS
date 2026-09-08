@@ -14,7 +14,7 @@
  *   4. Top bar (fixed, three zones: name / date / time)
  *   5. Workspace root + empty-state hint
  *   6. Windows (2px solid border, no chrome)
- *   7. Tiling layouts (master-stack + dwindle)
+ *   7. Tiling layouts (dwindle BSP)
  *   8. Workspace indicator pill
  *   9. Module launcher popup
  *  10. Theme picker popup
@@ -628,6 +628,27 @@ body {
 
 .task-priority.prio-medium {
   color: var(--color-accent);
+}
+
+.task-move {
+  background: none;
+  border: none;
+  color: var(--color-border);
+  font-family: "Symbols Nerd Font", monospace; /* NF carets, not the UI font */
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  flex: none;
+}
+
+.task-move:hover:not(:disabled) {
+  color: var(--color-accent);
+}
+
+.task-move:disabled {
+  opacity: 0.25;
+  cursor: default;
 }
 
 .task-expand,
