@@ -760,7 +760,8 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   Notes module — multiple titled notes with inline editing (Spec §8).
+   Notes module — multiple titled notes with inline editing and a
+   markdown preview toggle (Spec §8).
    Data persists under moduleData.notes (Spec §9).
    --------------------------------------------------------------- */
 .notes {
@@ -866,10 +867,18 @@ body {
   flex-direction: column;
 }
 
+/* title input + preview toggle share a row; the row carries the border
+   that used to sit on the title input alone */
+.notes-titlerow {
+  display: flex;
+  border-bottom: 2px solid var(--color-border);
+}
+
 .notes-title {
+  flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
-  border-bottom: 2px solid var(--color-border);
   color: var(--color-accent);
   font: inherit;
   font-weight: 700;
@@ -879,6 +888,33 @@ body {
 
 .notes-title:focus {
   outline: none;
+}
+
+/* markdown preview toggle, styled like the other custom buttons */
+.notes-mode {
+  flex: none;
+  background: transparent;
+  border: none;
+  border-left: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.notes-mode:hover {
+  color: var(--color-bg);
+  background: var(--color-accent);
+}
+
+/* steady highlighted state while the note is in preview mode */
+.notes-mode.active {
+  color: var(--color-bg);
+  background: var(--color-accent-secondary);
 }
 
 .notes-body {
@@ -895,6 +931,71 @@ body {
 
 .notes-body:focus {
   outline: none;
+}
+
+/* rendered markdown preview (read-only view of the note body) */
+.notes-preview {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px;
+  line-height: 1.6;
+}
+
+.notes-preview > :first-child {
+  margin-top: 0;
+}
+
+.notes-preview h1,
+.notes-preview h2,
+.notes-preview h3 {
+  color: var(--color-accent);
+  margin: 0.8em 0 0.3em;
+  line-height: 1.25;
+}
+
+.notes-preview h1 {
+  font-size: 1.4em;
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.notes-preview h2 {
+  font-size: 1.2em;
+}
+
+.notes-preview h3 {
+  font-size: 1.05em;
+}
+
+.notes-preview p {
+  margin: 0.4em 0;
+}
+
+.notes-preview ul,
+.notes-preview ol {
+  margin: 0.4em 0;
+  padding-left: 1.6em;
+}
+
+.notes-preview li {
+  margin: 0.15em 0;
+}
+
+.notes-preview code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.9em;
+  padding: 1px 5px;
+  background: color-mix(in srgb, var(--color-border) 30%, transparent);
+  color: var(--color-accent-secondary);
+}
+
+.notes-preview a {
+  color: var(--color-accent);
+}
+
+.notes-preview a:hover {
+  color: var(--color-accent-secondary);
 }
 
 .notes-empty {
