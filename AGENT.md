@@ -13,7 +13,7 @@ pOS is a browser-based personal dashboard that behaves like a tiling window mana
 ## Architecture
 
 - **Modules** (`js/modules/*.js`) are self-contained units registered via `registerModule()` in `js/modules.js` with `{ id, name, icon (Nerd Font glyph), mount(container, context), unmount(container) }`. The WM core never imports module internals; **a new module must never require changes to `js/wm-core.js`**. Module data flows through the mount `context` (`context.load()` / `context.persist(slice)`).
-- **Theming:** colors only via CSS custom properties (`var(--color-accent)`, `var(--color-border)`, etc.) defined per-theme in `style.css` / `js/themes.js`. **Never hardcode hex colors** in component styles — 11 themes must stay swappable.
+- **Theming:** colors only via CSS custom properties (`var(--color-accent)`, `var(--color-border)`, etc.) defined per-theme in `style.css` / `js/themes.js`. **Never hardcode hex colors** in component styles — 11 themes must stay swappable. `--color-border` doubles as the secondary/muted text color (meta rows, dates, descriptions, placeholders, dimmed entries) and every theme keeps it at **≥ 4.5:1 WCAG AA contrast against the background** — preserve that baseline when adding or adjusting themes.
 - **No native form elements:** text inputs, buttons, checkboxes, number steppers, etc. must be custom-styled to the theme system. Established patterns: the custom checkbox in Tasks (`.task-check`), the ± steppers in Pomodoro (`.pomodoro-step-*`), the custom buttons in Tasks/Weather/Pomodoro.
 - **Window aesthetic:** sharp corners (`border-radius: 0`), 2px solid borders, transparent backgrounds. Each module renders its own embedded title bar (icon + name, `.module-title`) — the WM does not draw module titles.
 - **Persistence:** everything lives in a single `localStorage` key (`personal-os-state`) as one JSON blob (Spec §9). Module data goes under `moduleData.<moduleId>`. The Pomodoro timer is deliberately **not** persisted (live session timer).
@@ -50,3 +50,7 @@ This codebase has been through explicit cleanup/humanizing passes. Keep that bar
 ## Scope constraints
 
 This is a **personal, single-user** project: no auth, no accounts, no backend, no multi-user concerns, localStorage is not encrypted. Preserve those constraints unless explicitly asked otherwise. The old `PersonalOS` folder is stale — the project lives here.
+
+## Changelog
+
+- 2026-09-09 — Muted-text contrast fix: `--color-border` (secondary/muted text in all modules) failed WCAG AA against the background in all 11 themes (1.14–1.80:1). Raised every theme's `border` value to ≥ 4.71:1, using each scheme's canonical muted/comment shade where one clears AA (Everforest grey2, Gruvbox fg4, Catppuccin overlay2, Solarized base0/base01, Rosé Pine subtle) and a blend of the theme's comment hue toward its foreground otherwise (Nord, Dracula, Tokyo Night, One Dark, Monokai). Baseline documented in the Theming bullet above and in Spec §6.

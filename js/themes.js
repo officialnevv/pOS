@@ -8,9 +8,13 @@
  * changes. Each theme defines the 5 core colors:
  *   bg (background), fg (text), accent, border (focus-highlight),
  *   accentSecondary.
- * All values are the canonical, well-documented palette colors for
- * each scheme. applyTheme() writes them as CSS custom properties onto
- * the root element so all var(--color-*) styling updates instantly.
+ * `border` doubles as the secondary/muted text color (meta rows, dates,
+ * descriptions, placeholders, watched/dimmed entries), so every value
+ * keeps >= 4.5:1 WCAG AA contrast against bg (muted text must stay
+ * readable in all 11 themes). All values are canonical,
+ * well-documented palette colors for each scheme. applyTheme() writes
+ * them as CSS custom properties onto the root element so all
+ * var(--color-*) styling updates instantly.
  */
 
 /** Default theme used on first load and as a fallback. */
@@ -33,7 +37,7 @@ export const THEMES = [
       bg: '#2d353b',
       fg: '#d3c6aa',
       accent: '#a7c080',
-      border: '#4b5559',
+      border: '#9da9a0', // grey2 — muted text/borders, AA on bg
       accentSecondary: '#e69875',
     },
   },
@@ -44,7 +48,7 @@ export const THEMES = [
       bg: '#282828',
       fg: '#ebdbb2',
       accent: '#fabd2f',
-      border: '#504945',
+      border: '#a89984', // fg4 — muted text/borders, AA on bg
       accentSecondary: '#fe8019',
     },
   },
@@ -55,7 +59,7 @@ export const THEMES = [
       bg: '#2e3440',
       fg: '#d8dee9',
       accent: '#88c0d0',
-      border: '#434c5e',
+      border: '#989faf', // lightened polar-night grey, AA on bg
       accentSecondary: '#81a1c1',
     },
   },
@@ -66,7 +70,7 @@ export const THEMES = [
       bg: '#282a36',
       fg: '#f8f8f2',
       accent: '#bd93f9',
-      border: '#44475a',
+      border: '#8894b8', // lightened comment purple, AA on bg
       accentSecondary: '#ff79c6',
     },
   },
@@ -77,7 +81,7 @@ export const THEMES = [
       bg: '#1e1e2e',
       fg: '#cdd6f4',
       accent: '#cba6f7',
-      border: '#45475a',
+      border: '#9399b2', // overlay2 — muted text/borders, AA on bg
       accentSecondary: '#f5c2e7',
     },
   },
@@ -88,7 +92,7 @@ export const THEMES = [
       bg: '#002b36',
       fg: '#93a1a1',
       accent: '#2aa198',
-      border: '#073642',
+      border: '#839496', // base0 — body/muted text, AA on bg
       accentSecondary: '#b58900',
     },
   },
@@ -99,7 +103,7 @@ export const THEMES = [
       bg: '#fdf6e3',
       fg: '#657b83',
       accent: '#268bd2',
-      border: '#eee8d5',
+      border: '#586e75', // base01 — muted/emphasized text, AA on bg
       accentSecondary: '#cb4b16',
     },
   },
@@ -110,7 +114,7 @@ export const THEMES = [
       bg: '#1a1b26',
       fg: '#a9b1d6',
       accent: '#7aa2f7',
-      border: '#292e42',
+      border: '#7c85ac', // lightened comment blue-grey, AA on bg
       accentSecondary: '#bb9af7',
     },
   },
@@ -121,7 +125,7 @@ export const THEMES = [
       bg: '#282c34',
       fg: '#abb2bf',
       accent: '#61afef',
-      border: '#3e4451',
+      border: '#8f96a3', // lightened comment grey, AA on bg
       accentSecondary: '#98c379',
     },
   },
@@ -132,7 +136,7 @@ export const THEMES = [
       bg: '#191724',
       fg: '#e0def4',
       accent: '#ebbcba',
-      border: '#26233a',
+      border: '#908caa', // subtle — muted text/borders, AA on bg
       accentSecondary: '#c4a7e7',
     },
   },
@@ -143,7 +147,7 @@ export const THEMES = [
       bg: '#272822',
       fg: '#f8f8f2',
       accent: '#a6e22e',
-      border: '#49483e',
+      border: '#969383', // lightened comment khaki, AA on bg
       accentSecondary: '#fd971f',
     },
   },
