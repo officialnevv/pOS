@@ -54,6 +54,8 @@ This is a **personal, single-user** project: no auth, no accounts, no backend, n
 
 ## Changelog
 
+- 2026-09-09 — Top-pills spacing fix: the top pills were vertically centered in their 36px strip (5px above, but 5px + the 12px tiling outer gap = 17px below to window content). They now sit flush with the strip's bottom edge at 24px tall, giving equal 12px breathing room above (screen edge) and below (window tops) — 12px being the existing `WINDOW_GAP` constant. Reserved height unchanged (36px), so the WM calculation and module layouts are unaffected.
+
 - 2026-09-09 — Removed the rounded corners from the shell pills: the three top pills and the bottom workspace pill are sharp-cornered like everything else (`border-radius: 0` everywhere, no exceptions). Layout, spacing, and space-reservation behavior unchanged.
 
 - 2026-09-09 — Top bar redesigned as three floating shell pills ("pOS" / date / time), each its own rounded pill matching the bottom workspace pill (which is now explicitly rounded too — the shell pills are the one sharp-corner-rule exception). Space reservation mirrors the existing mechanism: `#workspace-root` keeps its `top` offset below the 36px pill strip (unchanged value, so no module/window layout shift), and floating drags already clamp to root-relative coordinates, so windows can never render under the pills. Fullscreen behavior unchanged: fullscreen windows fill the reserved area below the pills and stay beneath them (z-index 500 vs the shell's 900/1000). Time tooltip now targets the time pill only.

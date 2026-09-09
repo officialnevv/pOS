@@ -112,7 +112,9 @@ body {
   height: 36px; /* reserved strip; keep in sync with #workspace-root */
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  align-items: center;
+  align-items: end; /* pill bottom flush with the strip: 36 - 24 = 12px
+                       above and the WINDOW_GAP(12) tiling inset below
+                       give equal 12px breathing room */
   padding: 0 12px; /* same edge gap as the old top bar */
   pointer-events: none; /* only the pills themselves are interactive */
   z-index: 1000;
@@ -123,7 +125,7 @@ body {
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
-  height: 26px;
+  height: 24px; /* 36px strip - 24px = 12px top gap = WINDOW_GAP */
   padding: 0 12px;
   background: var(--color-bg);
   border: 2px solid var(--color-border);
