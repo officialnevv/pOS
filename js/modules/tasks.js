@@ -17,6 +17,9 @@ const TASKS_ICON = '\uf14a';  // Nerd Font check-square
 const CHECK_GLYPH = '\uf00c'; // Nerd Font check, drawn inside the checkbox
 const CARET_DOWN = '\uf0d7'; // nf-fa-caret_down
 const CARET_UP = '\uf0d8';   // nf-fa-caret_up
+const SORT_OFF = '\uf0dc';   // nf-fa-sort (due-date sort inactive)
+const SORT_ASC = '\uf160';   // nf-fa-sort-amount-asc (soonest due first)
+const SORT_DESC = '\uf161';  // nf-fa-sort-amount-desc (latest due first)
 const PRIORITIES = ['none', 'low', 'medium', 'high'];
 
 // Tolerate old/partial saved entries: missing fields default to no due
@@ -37,9 +40,12 @@ function mount(container, context) {
   const persist = () => context.persist(items);
 
   // view state, deliberately not persisted: which task's editor is
-  // open, and the active priority filter
+  // open, the active priority filter, and the due-date sort direction
+  // ('off' | 'asc' | 'desc' — a display-time sort that never rewrites
+  // the underlying manual order)
   let expanded = null;
   let filter = 'all';
+  let dueSort = 'off';
 
   // embedded title: icon + module name (Spec §2)
   const title = document.createElement('div');
@@ -77,6 +83,13 @@ function mount(container, context) {
   filterSelect.value = 'all';
   filterRow.append(filterLabel, filterSelect);
 
+  // due-date sort toggle (display-time: flips soonest-first <-> latest-
+  // first; the manual order underneath is never rewritten)
+  const sortBtn = document.createElement('button');
+  sortBtn.type = 'button';
+  sortBtn.className = 'tasks-sort';
+  filterRow.append(sortBtn);
+
   const list = document.createElement('ul');
   list.className = 'tasks-list';
 
@@ -91,20 +104,45 @@ function mount(container, context) {
     filter = filterSelect.value;
     renderList();
   });
+  sortBtn.addEventListener('click', () => {
+    dueSort = dueSort === 'off' ? 'asc' : dueSort === 'asc' ? 'desc' : 'off';
+    renderList();
+  });
 
   /* ---- rendering ---- */
   function renderList() {
     list.innerHTML = '';
+    sortBtn.textContent =
+      dueSort === 'off' ? SORT_OFF : dueSort === 'asc' ? SORT_ASC : SORT_DESC;
+    sortBtn.classList.toggle('active', dueSort !== 'off');
+    sortBtn.title =
+      dueSort === 'off'
+        ? 'sort by due date'
+        : dueSort === 'asc'
+          ? 'sorted by due date — soonest first (click for latest first)'
+          : 'sorted by due date — latest first (click to turn sort off)';
     if (!items.length) {
       empty('nothing yet — add a task above');
       return;
     }
-    const visible = filter === 'all'
+    let visible = filter === 'all'
       ? items
       : items.filter((it) => it.priority === filter);
     if (!visible.length) {
       empty(`no ${filter}-priority tasks`);
       return;
+    }
+    if (dueSort !== 'off') {
+      // display-time sort: the underlying manual order is untouched.
+      // Undated tasks always sort to the end, in either direction.
+      visible = [...visible].sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return dueSort === 'asc'
+          ? a.dueDate.localeCompare(b.dueDate)
+          : b.dueDate.localeCompare(a.dueDate);
+      });
     }
     for (let i = 0; i < visible.length; i++) {
       list.appendChild(renderRow(visible[i], i, visible.length));
@@ -193,19 +231,26 @@ function mount(container, context) {
     // task swaps its position with the neighbouring *visible* task
     // (filter-aware: with a priority filter active, the task moves past
     // the nearest entry that is actually on screen)
+    // manual reordering is disabled while the due-date sort dictates
+    // the display order (the underlying manual order is untouched)
+    const sorting = dueSort !== 'off';
     const moveUp = document.createElement('button');
     moveUp.type = 'button';
     moveUp.className = 'task-move';
     moveUp.textContent = CARET_UP;
-    moveUp.title = 'move up';
-    moveUp.disabled = index === 0;
+    moveUp.title = sorting
+      ? 'manual reorder is off while sorting by due date'
+      : 'move up';
+    moveUp.disabled = sorting || index === 0;
     moveUp.addEventListener('click', () => moveTask(item, -1));
     const moveDown = document.createElement('button');
     moveDown.type = 'button';
     moveDown.className = 'task-move';
     moveDown.textContent = CARET_DOWN;
-    moveDown.title = 'move down';
-    moveDown.disabled = index === visibleCount - 1;
+    moveDown.title = sorting
+      ? 'manual reorder is off while sorting by due date'
+      : 'move down';
+    moveDown.disabled = sorting || index === visibleCount - 1;
     moveDown.addEventListener('click', () => moveTask(item, +1));
 
     li.append(check, main, moveUp, moveDown, expand, removeBtn);

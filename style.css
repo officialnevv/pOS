@@ -771,6 +771,26 @@ body {
   border-color: var(--color-accent);
 }
 
+/* due-date sort toggle (right end of the filter row) */
+.tasks-sort {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--color-border);
+  font-family: "Symbols Nerd Font", monospace; /* NF glyph, not the UI font */
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.tasks-sort:hover {
+  color: var(--color-accent);
+}
+
+.tasks-sort.active {
+  color: var(--color-accent);
+}
+
 .tasks-empty {
   padding: 16px 12px;
   color: var(--color-text-muted);
@@ -1418,6 +1438,20 @@ body {
 .weather-cond {
   color: var(--color-text-muted);
   font-size: 13px;
+}
+
+.weather-humidity {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.weather-humidity-glyph {
+  font-family: "Symbols Nerd Font", monospace;
+  line-height: 1;
 }
 
 .weather-days {
