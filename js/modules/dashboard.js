@@ -26,14 +26,6 @@ const DASHBOARD_ICON = '\uf0e4'; // nf-fa-tachometer
 // (same scale as the Tasks module)
 const TASK_PRIORITY_RANK = { high: 3, medium: 2, low: 1, none: 0 };
 
-// local calendar date as YYYY-MM-DD (the Agenda module's date format)
-function todayIso() {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
-}
-
 // one summary builder per module: reads that module's slice (READ-ONLY)
 // and returns { primary, preview? } — primary is the headline line,
 // preview an optional muted secondary line. Never-used slices (null)
@@ -69,17 +61,6 @@ const summaries = {
       primary: weather.city,
       preview: temp == null ? undefined : `${Math.round(temp)}°C`,
     };
-  },
-
-  agenda() {
-    const entries = getModuleData('agenda') ?? [];
-    const upcoming = entries
-      .map((entry) => entry.date)
-      .filter((date) => date >= todayIso())
-      .sort();
-    if (!upcoming.length) return { primary: 'nothing scheduled' };
-    const entry = entries.find((e) => e.date === upcoming[0]);
-    return { primary: entry.date, preview: entry.note };
   },
 
   bookmarks() {
@@ -344,7 +325,6 @@ const SUMMARY_ORDER = [
   'notes',
   'pomodoro',
   'weather',
-  'agenda',
   'bookmarks',
   'watchLater',
   'goals',
@@ -358,7 +338,8 @@ const CARD_SIZES = {
   pomodoro: 'card-wide',
   goals: 'card-wide',
   repositories: 'card-wide',
-  agenda: 'card-mid',
+  weather: 'card-mid',
+  notes: 'card-mid',
   bookmarks: 'card-mid',
   watchLater: 'card-mid',
 };

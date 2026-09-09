@@ -24,7 +24,6 @@ import './modules/tasks.js';
 import './modules/notes.js';
 import './modules/pomodoro.js';
 import './modules/weather.js';
-import './modules/agenda.js';
 import './modules/bookmarks.js';
 import './modules/watchlater.js';
 import './modules/goals.js';
