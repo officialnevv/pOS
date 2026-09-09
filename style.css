@@ -1792,3 +1792,493 @@ body {
   padding: 24px 12px;
   color: var(--color-border);
 }
+
+/* ---------------------------------------------------------------
+   Goals module — goals with categories, target dates, checkpoints
+   and derived or manual progress.
+   Data persists under moduleData.goals (Spec §9).
+   --------------------------------------------------------------- */
+
+.goals-add {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.goals-add input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  border-radius: 0;
+}
+
+.goals-add input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.goals-add button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.goals-add button:hover {
+  border-color: var(--color-accent);
+}
+
+/* archived show/hide toggle above the list */
+.goals-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--color-border);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.goals-filter button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 2px 8px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.goals-filter button:hover {
+  border-color: var(--color-accent);
+}
+
+.goals-filter button.active {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.goals-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.goal-item {
+  padding: 8px 12px;
+}
+
+/* archived goals read as "done": dimmed with a struck-through title
+   (same treatment idea as Watch Later's watched entries) */
+.goal-item.archived {
+  opacity: 0.45;
+}
+
+.goal-item.archived .goal-title {
+  text-decoration: line-through;
+}
+
+.goal-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.goal-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.goal-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.goal-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* free-typed category tag next to the title */
+.goal-category {
+  flex: none;
+  font-size: 11px;
+  padding: 1px 8px;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* shown only on archived goals; clicking un-archives */
+.goal-archived-pill {
+  flex: none;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-border);
+  font: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 8px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.goal-archived-pill:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* description visible at a glance in the list view, under the title */
+.goal-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  opacity: 0.75;
+}
+
+.goal-target {
+  align-self: flex-start;
+  font-size: 11px;
+  color: var(--color-border);
+  font-variant-numeric: tabular-nums;
+}
+
+/* horizontal progress bar: sharp corners, theme-drawn fill */
+.goal-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.goal-progress {
+  flex: 1;
+  height: 8px;
+  border: 2px solid var(--color-border);
+}
+
+.goal-progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.goal-percent {
+  flex: none;
+  min-width: 4ch;
+  text-align: right;
+  font-size: 11px;
+  color: var(--color-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.goal-checkpoints {
+  list-style: none;
+  margin: 0;
+  padding-left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.goal-checkpoint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* custom checkbox: theme-drawn box, Nerd Font check glyph when done
+   (same pattern as the Tasks checkbox) */
+.goal-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: transparent; /* unchecked: box only, no glyph */
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 0;
+  transition: color 0.1s ease, border-color 0.1s ease;
+}
+
+.goal-check:hover {
+  border-color: var(--color-accent);
+}
+
+.goal-checkpoint.done .goal-check {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.goal-check-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.goal-check-remove {
+  background: none;
+  border: none;
+  color: var(--color-border);
+  font: inherit;
+  cursor: pointer;
+  padding: 0 4px;
+  flex: none;
+}
+
+.goal-check-remove:hover {
+  color: var(--color-accent-secondary);
+}
+
+/* always-visible add-checkpoint row at the bottom of the list */
+.goal-checkpoint-add {
+  display: flex;
+  gap: 6px;
+}
+
+.goal-checkpoint-add input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 0;
+}
+
+.goal-checkpoint-add input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.goal-checkpoint-add button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 0 8px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.goal-checkpoint-add button:hover {
+  border-color: var(--color-accent);
+}
+
+/* manual progress stepper (only for goals without checkpoints),
+   same pattern as the Pomodoro duration steppers */
+.goal-stepper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.goal-stepper-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-border);
+}
+
+.goal-step-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.goal-step-btn {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 0;
+  transition: border-color 0.1s ease, color 0.1s ease;
+}
+
+.goal-step-btn:hover {
+  border-color: var(--color-accent);
+}
+
+.goal-step-value {
+  min-width: 4ch;
+  text-align: center;
+  color: var(--color-fg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.goal-actions {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+
+.goal-move {
+  background: none;
+  border: none;
+  color: var(--color-border);
+  font-family: "Symbols Nerd Font", monospace; /* NF carets, not the UI font */
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  flex: none;
+}
+
+.goal-move:hover:not(:disabled) {
+  color: var(--color-accent);
+}
+
+.goal-move:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.goal-expand,
+.goal-remove {
+  background: none;
+  border: none;
+  color: var(--color-border);
+  font: inherit;
+  cursor: pointer;
+  padding: 0 4px;
+  flex: none;
+}
+
+/* see the Tasks module note: `font: inherit` resets font-family, so the
+   icon font is re-applied for the Nerd Font caret */
+.goal-expand {
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.goal-expand:hover,
+.goal-remove:hover {
+  color: var(--color-accent-secondary);
+}
+
+/* per-goal editor: description, category, target date */
+.goal-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 12px 8px 22px;
+  padding: 8px;
+  border: 2px solid var(--color-border);
+}
+
+.goal-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-border);
+}
+
+.goal-edit-row input {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 2px 6px;
+  border-radius: 0;
+  color-scheme: dark; /* keep native date-picker chrome legible */
+}
+
+.goal-edit-row input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.goal-edit textarea {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  min-height: 48px;
+  resize: vertical;
+  border-radius: 0;
+}
+
+.goal-edit textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+/* autocomplete suggestions: categories already used on this device */
+.goal-cat-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.goal-cat-suggestions:empty {
+  display: none;
+}
+
+.goal-cat-chip {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-border);
+  font: inherit;
+  font-size: 11px;
+  padding: 1px 8px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.goal-cat-chip:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.goals-empty {
+  padding: 16px 12px;
+  color: var(--color-border);
+  text-align: center;
+}
