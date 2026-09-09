@@ -2576,3 +2576,74 @@ body {
   color: var(--color-text-muted);
   text-align: center;
 }
+
+/* ---------------------------------------------------------------
+   Dashboard module — read-only summary of every other module
+   (Spec §8, exception): one clickable card per module, snapshot
+   rendered at mount time.
+   Reads other modules' moduleData slices; keeps none of its own.
+   --------------------------------------------------------------- */
+
+.dashboard-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  align-content: start;
+}
+
+.dashboard-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 2px solid var(--color-border);
+  cursor: pointer;
+  transition: border-color 0.12s ease;
+}
+
+.dashboard-card:hover {
+  border-color: var(--color-accent);
+}
+
+.dashboard-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--color-fg);
+  font-weight: 700;
+}
+
+.dashboard-card-icon {
+  font-family: "Symbols Nerd Font", monospace;
+  color: var(--color-accent);
+}
+
+.dashboard-card-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-card-primary {
+  font-size: 12px;
+  color: var(--color-fg);
+  font-weight: 700;
+}
+
+.dashboard-card-preview {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -29,6 +29,7 @@ import './modules/bookmarks.js';
 import './modules/watchlater.js';
 import './modules/goals.js';
 import './modules/repositories.js';
+import './modules/dashboard.js';
 
 import { DEFAULT_THEME_ID, applyTheme, getAllThemes } from './themes.js';
 import { loadState, saveState, getModuleData, setModuleData } from './persistence.js';
@@ -127,8 +128,8 @@ const tiledWindows = (ws) => ws.windows.filter((w) => w.state === 'tiled');
 
 /* ---------- window lifecycle ---------- */
 
-function openWindow(moduleId) {
-  const ws = currentWorkspace();
+function openWindow(moduleId, workspaceIndex = state.activeWorkspace) {
+  const ws = state.workspaces[workspaceIndex];
   const prevFocusId = focusedWindowId;
   const win = {
     id: nextWindowId++,
@@ -137,7 +138,9 @@ function openWindow(moduleId) {
     floatingGeometry: null,
     isFullscreen: false,
   };
-  focusedWindowId = win.id;
+  // focus only follows for the active workspace (the Dashboard auto-open
+  // targets workspace 1 and must not steal focus from another workspace)
+  if (workspaceIndex === state.activeWorkspace) focusedWindowId = win.id;
   // Dwindle: the new window splits the focused window's space. The tree
   // is updated BEFORE the window is pushed, so the window enters the
   // tree exactly once (a tree-less legacy restore is rebuilt from the
@@ -633,6 +636,7 @@ function createWindowEl(win) {
     mod.mount(content, {
       load: () => getModuleData(win.moduleId),
       persist: (slice) => setModuleData(win.moduleId, slice),
+      openModule: launchModule, // singleton-aware launch (Dashboard cards)
     });
   } else {
     content.textContent = `unknown module: ${win.moduleId}`;
@@ -1294,10 +1298,20 @@ function closeThemePicker() {
   themePicker = null;
 }
 
+/* ---------- Dashboard auto-open (Spec §8, exception) ----------
+ * The Dashboard re-opens itself into workspace 1 on every load:
+ * closing it dismisses it for the current session only. */
+function ensureDashboardOpen() {
+  const isOpen = state.workspaces.some((ws) =>
+    ws.windows.some((w) => w.moduleId === 'dashboard'));
+  if (!isOpen) openWindow('dashboard', 0); // workspace 1
+}
+
 /**
  * App bootstrap.
  * Applies theme, starts the top-pills clock, binds WM keybinds + mouse
- * behavior. Workspaces start empty — Alt+W opens the launcher.
+ * behavior. Workspaces start empty except the Dashboard, which
+ * auto-opens into workspace 1 on every load.
  */
 function init() {
   // Element refs FIRST: restoreState()'s legacy-axis migration measures
@@ -1313,6 +1327,7 @@ function init() {
   initFavicon();
 
   render(); // initial paint: empty-workspace hint + pill
+  ensureDashboardOpen(); // Dashboard lives on workspace 1 (Spec §8)
 }
 
 if (document.readyState === 'loading') {
