@@ -1,7 +1,8 @@
 /*
  * pOS — js/modules/weather.js
  * ----------------------------------------------------------------------
- * Weather module — current conditions + short forecast for a saved city
+ * Weather module — current conditions (temperature, condition, wind,
+ * relative humidity) + short forecast for a saved city
  * (Spec §8, amendment). Data comes from Open-Meteo's free APIs (no key):
  *   geocoding: https://geocoding-api.open-meteo.com/v1/search?name={city}
  *   forecast:  https://api.open-meteo.com/v1/forecast?latitude={lat}&
@@ -20,6 +21,7 @@
 import { registerModule } from '../modules.js';
 
 const WEATHER_ICON = '\ueef0'; // nf-fa-cloud_sun
+const HUMIDITY_ICON = '\uf043'; // nf-fa-tint (water drop)
 const PENCIL_ICON = '\uf040';  // nf-fa-pencil (change-city affordance)
 
 const GEO_URL = 'https://geocoding-api.open-meteo.com/v1/search?name=';
@@ -98,7 +100,7 @@ function mount(container, context) {
   const errorEl = document.createElement('div');
   errorEl.className = 'weather-error';
 
-  // current-conditions view
+  // current-conditions view (icon + temp + condition/wind + humidity)
   const head = document.createElement('div');
   head.className = 'weather-head';
   const placeEl = document.createElement('span');
@@ -120,7 +122,13 @@ function mount(container, context) {
   tempEl.className = 'weather-temp';
   const condEl = document.createElement('span');
   condEl.className = 'weather-cond';
-  current.append(currentIcon, tempEl, condEl);
+  const humidityEl = document.createElement('span');
+  humidityEl.className = 'weather-humidity';
+  const humidityGlyph = document.createElement('span');
+  humidityGlyph.className = 'weather-humidity-glyph';
+  const humidityText = document.createElement('span');
+  humidityEl.append(humidityGlyph, humidityText);
+  current.append(currentIcon, tempEl, condEl, humidityEl);
 
   const daysEl = document.createElement('ul');
   daysEl.className = 'weather-days';
@@ -156,6 +164,8 @@ function mount(container, context) {
       currentIcon.textContent = '';
       tempEl.textContent = '';
       condEl.textContent = 'no forecast yet';
+      humidityGlyph.textContent = '';
+      humidityText.textContent = '';
       daysEl.innerHTML = '';
       return;
     }
@@ -164,6 +174,9 @@ function mount(container, context) {
     tempEl.textContent = `${Math.round(fc.current?.temperature ?? 0)}°C`;
     const wind = fc.current?.windspeed;
     condEl.textContent = label + (Number.isFinite(wind) ? ` · wind ${Math.round(wind)} km/h` : '');
+    const humidity = fc.current?.relative_humidity_2m;
+    humidityGlyph.textContent = Number.isFinite(humidity) ? HUMIDITY_ICON : '';
+    humidityText.textContent = Number.isFinite(humidity) ? `${Math.round(humidity)}%` : '';
 
     daysEl.innerHTML = '';
     const days = fc.daily ?? {};
