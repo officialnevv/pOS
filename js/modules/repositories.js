@@ -95,6 +95,9 @@ function mount(container, context) {
   // open, and which repos have a fetch in flight
   let expanded = null;
   const fetching = new Set();
+  // active tag filters + search query: view state, deliberately not
+  // persisted (they reset on reload)
+  const activeTags = new Set();
 
   // embedded title: icon + module name (Spec §2)
   const title = document.createElement('div');
@@ -121,10 +124,28 @@ function mount(container, context) {
   const error = document.createElement('div');
   error.className = 'repos-error';
 
+  // filter row (always visible): live name search + clickable tag chips
+  // built from all tags in use across saved repos
+  const filterBar = document.createElement('div');
+  filterBar.className = 'repos-filter';
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.className = 'repos-search';
+  searchInput.placeholder = 'search by name…';
+  const clearBtn = document.createElement('button');
+  clearBtn.type = 'button';
+  clearBtn.className = 'repos-clear';
+  clearBtn.textContent = 'clear filters';
+  clearBtn.title = 'clear search and tag filters';
+  clearBtn.style.display = 'none'; // only meaningful while a filter is active
+  const tagFilter = document.createElement('div');
+  tagFilter.className = 'repos-tag-filter';
+  filterBar.append(searchInput, clearBtn, tagFilter);
+
   const grid = document.createElement('ul');
   grid.className = 'repos-list';
 
-  container.append(title, addRow, error, grid);
+  container.append(title, addRow, error, filterBar, grid);
 
   /* ---- events ---- */
   addBtn.addEventListener('click', addRepo);
@@ -134,23 +155,70 @@ function mount(container, context) {
   urlInput.addEventListener('input', () => {
     error.textContent = '';
   });
+  searchInput.addEventListener('input', renderGrid); // live filter, no Enter
+  clearBtn.addEventListener('click', () => {
+    activeTags.clear();
+    searchInput.value = '';
+    renderGrid();
+  });
 
   /* ---- rendering ---- */
   function renderGrid() {
     grid.innerHTML = '';
+    renderFilterChips();
+    clearBtn.style.display = activeTags.size || searchInput.value ? '' : 'none';
     if (!repos.length) {
-      const empty = document.createElement('li');
-      empty.className = 'repos-empty';
-      empty.textContent = 'no repos — add one above';
-      grid.appendChild(empty);
+      empty('no repos — add one above');
       return;
     }
-    for (const repo of repos) {
-      grid.appendChild(renderCard(repo));
+    const visible = visibleRepos();
+    if (!visible.length) {
+      empty('no repos match');
+      return;
+    }
+    for (let i = 0; i < visible.length; i++) {
+      grid.appendChild(renderCard(visible[i], i, visible.length));
     }
   }
 
-  function renderCard(repo) {
+  function empty(text) {
+    const li = document.createElement('li');
+    li.className = 'repos-empty';
+    li.textContent = text;
+    grid.appendChild(li);
+  }
+
+  // search (case-insensitive name substring) AND tag filters (a repo
+  // must carry every active tag) — display only, storage and order
+  // are untouched
+  function visibleRepos() {
+    const query = searchInput.value.trim().toLowerCase();
+    return repos.filter((repo) =>
+      repo.name.toLowerCase().includes(query) &&
+      [...activeTags].every((tag) => repo.tags.includes(tag))
+    );
+  }
+
+  // filter chips: every tag in use across saved repos (same aggregation
+  // as the tag-entry suggestions); click toggles the tag as a filter
+  function renderFilterChips() {
+    tagFilter.innerHTML = '';
+    for (const tag of usedTags()) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'repo-filter-chip' + (activeTags.has(tag) ? ' active' : '');
+      chip.textContent = tag;
+      chip.title = activeTags.has(tag) ? 'stop filtering by this tag' : 'filter by this tag';
+      chip.addEventListener('click', () => {
+        if (activeTags.has(tag)) activeTags.delete(tag);
+        else activeTags.add(tag);
+        renderGrid();
+      });
+      tagFilter.appendChild(chip);
+    }
+  }
+
+  function renderCard(repo, index, visibleCount) {
     const li = document.createElement('li');
     li.className = 'repo-card'
       + (repo.fetchFailed ? ' fetch-failed' : '')
@@ -168,20 +236,27 @@ function mount(container, context) {
     }
 
     // a real anchor like Bookmarks: middle-click / ctrl-click / plain
-    // click all open the repo in a new tab
+    // click all open the repo in a new tab. Main title is the repo name
+    // only; the owner stays visible as a small secondary label
+    const titleWrap = document.createElement('div');
+    titleWrap.className = 'repo-title';
     const link = document.createElement('a');
     link.className = 'repo-link';
     link.href = repo.url;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    link.textContent = repo.owner + '/' + repo.name;
+    link.textContent = repo.name;
     link.title = repo.url;
-    head.appendChild(link);
+    const owner = document.createElement('span');
+    owner.className = 'repo-owner';
+    owner.textContent = repo.owner;
+    owner.title = repo.owner;
+    titleWrap.append(link, owner);
+    head.appendChild(titleWrap);
 
     const actions = document.createElement('div');
     actions.className = 'repo-actions';
 
-    const index = repos.indexOf(repo);
     const moveUp = document.createElement('button');
     moveUp.type = 'button';
     moveUp.className = 'repo-move';
@@ -194,7 +269,7 @@ function mount(container, context) {
     moveDown.className = 'repo-move';
     moveDown.textContent = CARET_DOWN;
     moveDown.title = 'move down';
-    moveDown.disabled = index === repos.length - 1;
+    moveDown.disabled = index === visibleCount - 1;
     moveDown.addEventListener('click', () => moveRepo(repo, +1));
 
     // re-fetch on demand (stale stars/description); on a fetchFailed card
@@ -380,11 +455,15 @@ function mount(container, context) {
     return [...new Set(repos.flatMap((repo) => repo.tags))];
   }
 
-  // manual reordering: array order IS the display order
+  // manual reordering: array order IS the display order, so moving swaps
+  // positions with the neighbouring *visible* card (filter-aware, like
+  // Tasks/Goals)
   function moveRepo(repo, dir) {
+    const visible = visibleRepos();
+    const neighbor = visible[visible.indexOf(repo) + dir];
+    if (!neighbor) return; // already at the edge of the (visible) grid
     const from = repos.indexOf(repo);
-    const to = from + dir;
-    if (to < 0 || to >= repos.length) return; // already at a grid edge
+    const to = repos.indexOf(neighbor);
     [repos[from], repos[to]] = [repos[to], repos[from]];
     persist();
     renderGrid();

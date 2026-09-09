@@ -2341,6 +2341,81 @@ body {
   display: none;
 }
 
+/* filter row: live name search + tag filter chips (view state only) */
+.repos-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.repos-search {
+  flex: 1;
+  min-width: 120px;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  border-radius: 0;
+}
+
+.repos-search:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.repos-clear {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent-secondary);
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.repos-clear:hover {
+  border-color: var(--color-accent-secondary);
+}
+
+.repos-tag-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex-basis: 100%;
+}
+
+.repos-tag-filter:empty {
+  display: none;
+}
+
+.repo-filter-chip {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 11px;
+  padding: 1px 8px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.repo-filter-chip:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* active filter: filled with the accent instead of outlined */
+.repo-filter-chip.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
 /* the "shelf": responsive card grid — columns reflow with window
    width, even gaps, equal card heights per row */
 .repos-list {
@@ -2385,8 +2460,15 @@ body {
   border-radius: 0;
 }
 
-.repo-link {
+.repo-title {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.repo-link {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2398,6 +2480,17 @@ body {
 
 .repo-link:hover {
   color: var(--color-accent);
+}
+
+/* small secondary label under the title: the owner, so repos with the
+   same name from different owners stay distinguishable */
+.repo-owner {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 .repo-actions {
