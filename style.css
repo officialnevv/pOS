@@ -101,9 +101,8 @@ body {
       left: project name | center: live date | right: live time.
       The 36px strip reserves space at the top edge (#workspace-root
       starts below it, and floating drags clamp to the root, so
-      windows never render under the pills). The pills are the one
-      rounded exception to the sharp-corner rule, matching the bottom
-      workspace pill.
+      windows never render under the pills). Sharp corners, like
+      everything else in pOS.
    --------------------------------------------------------------- */
 #top-pills {
   position: fixed;
@@ -128,7 +127,6 @@ body {
   padding: 0 12px;
   background: var(--color-bg);
   border: 2px solid var(--color-border);
-  border-radius: 999px; /* pill exception to the sharp-corner rule */
   font-size: 12px;
 }
 
@@ -259,7 +257,6 @@ body {
   padding: 4px 4px; /* tight horizontal padding: icons hug the pill ends */
   background: var(--color-bg);
   border: 2px solid var(--color-border);
-  border-radius: 999px; /* pill exception to the sharp-corner rule */
   z-index: 900;
   user-select: none;
 }
