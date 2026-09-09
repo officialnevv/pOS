@@ -13,12 +13,11 @@
  * and renders a retry state instead of dropping the entry.
  *
  * Cards render in a responsive grid ("shelf" layout). Each entry also
- * carries an always-visible personal note (Tasks description convention)
- * and free-typed tags with suggestions drawn from previously used tags
- * (Goals category convention). Data persists as an array of repo objects
- * under the module's own moduleData.repositories slice (Spec §9); array
- * order is the display order. Entries saved before the extra fields
- * existed are normalized on load.
+ * carries an always-visible personal note (Tasks description convention).
+ * Data persists as an array of repo objects under the module's own
+ * moduleData.repositories slice (Spec §9); array order is the display
+ * order. Entries saved before the extra fields existed are normalized
+ * on load.
  */
 
 import { registerModule } from '../modules.js';
@@ -31,7 +30,7 @@ const CARET_UP = '\uf0d8';      // nf-fa-caret_up
 const API_BASE = 'https://api.github.com/repos/';
 
 // Tolerate old/partial saved entries: missing fields default to "not
-// fetched yet" (empty details, no note/tags, no failure flag).
+// fetched yet" (empty details, no note, no failure flag).
 function normalize(list) {
   return (Array.isArray(list) ? list : [])
     .map((repo) => ({
@@ -44,8 +43,6 @@ function normalize(list) {
       language: typeof repo?.language === 'string' ? repo.language : '',
       avatarUrl: typeof repo?.avatarUrl === 'string' ? repo.avatarUrl : '',
       note: typeof repo?.note === 'string' ? repo.note : '',
-      tags: (Array.isArray(repo?.tags) ? repo.tags : [])
-        .filter((tag) => typeof tag === 'string' && tag),
       addedAt: typeof repo?.addedAt === 'number' ? repo.addedAt : Date.now(),
       fetchFailed: !!repo?.fetchFailed,
     }))
@@ -95,9 +92,8 @@ function mount(container, context) {
   // open, and which repos have a fetch in flight
   let expanded = null;
   const fetching = new Set();
-  // active tag filters + search query: view state, deliberately not
-  // persisted (they reset on reload)
-  const activeTags = new Set();
+  // search query: view state, deliberately not persisted (resets on
+  // reload)
 
   // embedded title: icon + module name (Spec §2)
   const title = document.createElement('div');
@@ -124,23 +120,14 @@ function mount(container, context) {
   const error = document.createElement('div');
   error.className = 'repos-error';
 
-  // filter row (always visible): live name search + clickable tag chips
-  // built from all tags in use across saved repos
+  // search row (always visible): live case-insensitive name search
   const filterBar = document.createElement('div');
   filterBar.className = 'repos-filter';
   const searchInput = document.createElement('input');
   searchInput.type = 'text';
   searchInput.className = 'repos-search';
   searchInput.placeholder = 'search by name…';
-  const clearBtn = document.createElement('button');
-  clearBtn.type = 'button';
-  clearBtn.className = 'repos-clear';
-  clearBtn.textContent = 'clear filters';
-  clearBtn.title = 'clear search and tag filters';
-  clearBtn.style.display = 'none'; // only meaningful while a filter is active
-  const tagFilter = document.createElement('div');
-  tagFilter.className = 'repos-tag-filter';
-  filterBar.append(searchInput, clearBtn, tagFilter);
+  filterBar.append(searchInput);
 
   const grid = document.createElement('ul');
   grid.className = 'repos-list';
@@ -156,17 +143,10 @@ function mount(container, context) {
     error.textContent = '';
   });
   searchInput.addEventListener('input', renderGrid); // live filter, no Enter
-  clearBtn.addEventListener('click', () => {
-    activeTags.clear();
-    searchInput.value = '';
-    renderGrid();
-  });
 
   /* ---- rendering ---- */
   function renderGrid() {
     grid.innerHTML = '';
-    renderFilterChips();
-    clearBtn.style.display = activeTags.size || searchInput.value ? '' : 'none';
     if (!repos.length) {
       empty('no repos — add one above');
       return;
@@ -188,34 +168,11 @@ function mount(container, context) {
     grid.appendChild(li);
   }
 
-  // search (case-insensitive name substring) AND tag filters (a repo
-  // must carry every active tag) — display only, storage and order
-  // are untouched
+  // case-insensitive name substring search — display only, storage and
+  // order are untouched
   function visibleRepos() {
     const query = searchInput.value.trim().toLowerCase();
-    return repos.filter((repo) =>
-      repo.name.toLowerCase().includes(query) &&
-      [...activeTags].every((tag) => repo.tags.includes(tag))
-    );
-  }
-
-  // filter chips: every tag in use across saved repos (same aggregation
-  // as the tag-entry suggestions); click toggles the tag as a filter
-  function renderFilterChips() {
-    tagFilter.innerHTML = '';
-    for (const tag of usedTags()) {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'repo-filter-chip' + (activeTags.has(tag) ? ' active' : '');
-      chip.textContent = tag;
-      chip.title = activeTags.has(tag) ? 'stop filtering by this tag' : 'filter by this tag';
-      chip.addEventListener('click', () => {
-        if (activeTags.has(tag)) activeTags.delete(tag);
-        else activeTags.add(tag);
-        renderGrid();
-      });
-      tagFilter.appendChild(chip);
-    }
+    return repos.filter((repo) => repo.name.toLowerCase().includes(query));
   }
 
   function renderCard(repo, index, visibleCount) {
@@ -354,81 +311,6 @@ function mount(container, context) {
       li.appendChild(note);
     }
 
-    // tags: chips + the always-visible add row, available on every card
-    // (they're user data, independent of the fetch state)
-    const tagList = document.createElement('ul');
-    tagList.className = 'repo-tags';
-    for (const tag of repo.tags) {
-      const tagLi = document.createElement('li');
-      tagLi.className = 'repo-tag';
-      const tagLabel = document.createElement('span');
-      tagLabel.textContent = tag;
-      const tagRemove = document.createElement('button');
-      tagRemove.type = 'button';
-      tagRemove.className = 'repo-tag-remove';
-      tagRemove.textContent = '×';
-      tagRemove.title = 'remove tag';
-      tagRemove.addEventListener('click', () => {
-        repo.tags.splice(repo.tags.indexOf(tag), 1);
-        persist();
-        renderGrid();
-      });
-      tagLi.append(tagLabel, tagRemove);
-      tagList.appendChild(tagLi);
-    }
-    const tagAdd = document.createElement('li');
-    tagAdd.className = 'repo-tag-add';
-    const tagInput = document.createElement('input');
-    tagInput.type = 'text';
-    tagInput.placeholder = 'add tag…';
-    const tagBtn = document.createElement('button');
-    tagBtn.type = 'button';
-    tagBtn.textContent = '+';
-    tagBtn.title = 'add tag';
-    const addTag = () => {
-      const tag = tagInput.value.trim();
-      if (!tag) return;
-      if (!repo.tags.includes(tag)) repo.tags.push(tag);
-      tagInput.value = '';
-      persist();
-      renderGrid();
-    };
-    tagBtn.addEventListener('click', addTag);
-    tagInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') addTag();
-    });
-    tagAdd.append(tagInput, tagBtn);
-    tagList.appendChild(tagAdd);
-    li.appendChild(tagList);
-
-    // tag suggestions: tags already in use on this device, filtered to
-    // what has been typed so far (Goals category convention); a click
-    // adds the tag immediately
-    const suggestions = document.createElement('div');
-    suggestions.className = 'repo-tag-suggestions';
-    function renderSuggestions() {
-      suggestions.innerHTML = '';
-      const typed = tagInput.value.trim().toLowerCase();
-      for (const used of usedTags()) {
-        if (repo.tags.includes(used)) continue;
-        if (used.toLowerCase() === typed) continue;
-        if (typed && !used.toLowerCase().includes(typed)) continue;
-        const chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = 'repo-tag-chip';
-        chip.textContent = used;
-        chip.addEventListener('click', () => {
-          repo.tags.push(used);
-          persist();
-          renderGrid();
-        });
-        suggestions.appendChild(chip);
-      }
-    }
-    tagInput.addEventListener('input', renderSuggestions);
-    renderSuggestions();
-    li.appendChild(suggestions);
-
     // note editor opens inside the card so the grid row stays intact
     if (expanded === repo) {
       li.appendChild(renderNoteEditor(repo));
@@ -449,10 +331,6 @@ function mount(container, context) {
     });
     edit.appendChild(note);
     return edit;
-  }
-
-  function usedTags() {
-    return [...new Set(repos.flatMap((repo) => repo.tags))];
   }
 
   // manual reordering: array order IS the display order, so moving swaps
