@@ -97,38 +97,54 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   4. Top bar — fixed, three zones (Spec §2):
-      left: project name | center: live date | right: live time
+   4. Top pills — three floating shell pills (Spec §2):
+      left: project name | center: live date | right: live time.
+      The 36px strip reserves space at the top edge (#workspace-root
+      starts below it, and floating drags clamp to the root, so
+      windows never render under the pills). The pills are the one
+      rounded exception to the sharp-corner rule, matching the bottom
+      workspace pill.
    --------------------------------------------------------------- */
-#top-bar {
+#top-pills {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 36px;
+  height: 36px; /* reserved strip; keep in sync with #workspace-root */
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 0 12px;
-  background: var(--color-bg);
-  border-bottom: 2px solid var(--color-border);
+  padding: 0 12px; /* same edge gap as the old top bar */
+  pointer-events: none; /* only the pills themselves are interactive */
   z-index: 1000;
   user-select: none;
 }
 
-#top-bar-left {
+.top-pill {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 12px;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 999px; /* pill exception to the sharp-corner rule */
+  font-size: 12px;
+}
+
+#top-pill-left {
   justify-self: start;
   font-weight: 700;
   color: var(--color-accent);
   letter-spacing: 0.05em;
 }
 
-#top-bar-center {
+#top-pill-center {
   justify-self: center;
   color: var(--color-fg);
 }
 
-#top-bar-right {
+#top-pill-right {
   justify-self: end;
   color: var(--color-fg);
   font-variant-numeric: tabular-nums; /* no jitter as digits tick */
@@ -139,7 +155,7 @@ body {
    --------------------------------------------------------------- */
 #workspace-root {
   position: fixed;
-  top: 36px; /* below the top bar */
+  top: 36px; /* below the reserved top-pills strip (keep in sync) */
   left: 0;
   right: 0;
   bottom: 0;
@@ -243,6 +259,7 @@ body {
   padding: 4px 4px; /* tight horizontal padding: icons hug the pill ends */
   background: var(--color-bg);
   border: 2px solid var(--color-border);
+  border-radius: 999px; /* pill exception to the sharp-corner rule */
   z-index: 900;
   user-select: none;
 }

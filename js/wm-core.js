@@ -41,12 +41,12 @@ const DATE_OPTS = { weekday: 'short', day: '2-digit', month: 'short', year: 'num
 
 function tickClock() {
   const now = new Date();
-  document.getElementById('top-bar-center').textContent = now
+  document.getElementById('top-pill-center').textContent = now
     .toLocaleDateString('en-GB', DATE_OPTS)
     .replace(/,/g, '');
-  const timeEl = document.getElementById('top-bar-right');
+  const timeEl = document.getElementById('top-pill-right');
   // 12-hour, minutes only; the exact time with seconds goes in the
-  // hover tooltip, refreshed every tick.
+  // hover tooltip (on the time pill itself), refreshed every tick.
   timeEl.textContent = now.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
@@ -1296,7 +1296,7 @@ function closeThemePicker() {
 
 /**
  * App bootstrap.
- * Applies theme, starts the top-bar clock, binds WM keybinds + mouse
+ * Applies theme, starts the top-pills clock, binds WM keybinds + mouse
  * behavior. Workspaces start empty — Alt+W opens the launcher.
  */
 function init() {
