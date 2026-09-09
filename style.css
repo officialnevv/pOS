@@ -2621,18 +2621,6 @@ body {
   flex: 1 1 90px;
   min-width: 0;
   gap: 4px;
-  /* hover-revealed: hidden until the card is hovered (or focused, so an
-     in-progress tag never vanishes mid-typing); visibility (not display)
-     keeps the tag row from reflowing on hover */
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.12s ease, visibility 0.12s ease;
-}
-
-.repo-card:hover .repo-tag-add,
-.repo-tag-add:focus-within {
-  visibility: visible;
-  opacity: 1;
 }
 
 .repo-tag-add input {
