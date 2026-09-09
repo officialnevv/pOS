@@ -351,6 +351,18 @@ const SUMMARY_ORDER = [
   'repositories',
 ];
 
+// bento tier per module: chart-bearing summaries get larger cards
+// (see .card-wide/.card-mid in style.css); single-line summaries stay 1x1
+const CARD_SIZES = {
+  tasks: 'card-wide',
+  pomodoro: 'card-wide',
+  goals: 'card-wide',
+  repositories: 'card-wide',
+  agenda: 'card-mid',
+  bookmarks: 'card-mid',
+  watchLater: 'card-mid',
+};
+
 function mount(container, context) {
   // embedded title: icon + module name (Spec §2)
   const title = document.createElement('div');
@@ -372,7 +384,7 @@ function mount(container, context) {
     // clickable card: launches/focuses the module (singleton-aware,
     // same path as the launcher)
     const card = document.createElement('li');
-    card.className = 'dashboard-card';
+    card.className = `dashboard-card ${CARD_SIZES[moduleId] ?? ''}`.trim();
     card.title = `open ${mod.name}`;
     card.addEventListener('click', () => context.openModule(moduleId));
 
