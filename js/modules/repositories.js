@@ -354,8 +354,9 @@ function mount(container, context) {
       li.appendChild(note);
     }
 
-    // tags: chips + the always-visible add row, available on every card
-    // (they're user data, independent of the fetch state)
+    // tags: chips (always visible) + the add row (hover-revealed per
+    // card, see .repo-tag-add) — available on every card, they're user
+    // data independent of the fetch state
     const tagList = document.createElement('ul');
     tagList.className = 'repo-tags';
     for (const tag of repo.tags) {
