@@ -2284,3 +2284,338 @@ body {
   color: var(--color-text-muted);
   text-align: center;
 }
+
+/* ---------------------------------------------------------------
+   Repositories module — GitHub repo library: responsive card grid,
+   one-shot metadata fetch from GitHub's public API, manual
+   refresh/retry per card.
+   Data persists under moduleData.repositories (Spec §9).
+   --------------------------------------------------------------- */
+
+.repos-add {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.repos-add input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  border-radius: 0;
+}
+
+.repos-add input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.repos-add button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.repos-add button:hover {
+  border-color: var(--color-accent);
+}
+
+/* inline validation error for non-github URLs (hidden while empty) */
+.repos-error {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--color-accent-secondary);
+}
+
+.repos-error:empty {
+  display: none;
+}
+
+/* the "shelf": responsive card grid — columns reflow with window
+   width, even gaps, equal card heights per row */
+.repos-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  align-content: start;
+}
+
+.repo-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 2px solid var(--color-border);
+}
+
+/* failed fetch: dashed outline + explanation instead of details */
+.repo-card.fetch-failed {
+  border-style: dashed;
+}
+
+.repo-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.repo-avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: 2px solid var(--color-border);
+  border-radius: 0;
+}
+
+.repo-link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-fg);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.repo-link:hover {
+  color: var(--color-accent);
+}
+
+.repo-actions {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+
+.repo-move,
+.repo-refetch,
+.repo-expand,
+.repo-remove {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  cursor: pointer;
+  padding: 0 2px;
+  flex: none;
+}
+
+/* see the Tasks module note: `font: inherit` resets font-family, so the
+   icon font is re-applied for the Nerd Font glyphs */
+.repo-move,
+.repo-refetch,
+.repo-expand {
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.repo-move:hover:not(:disabled),
+.repo-refetch:hover {
+  color: var(--color-accent);
+}
+
+.repo-move:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.repo-expand:hover,
+.repo-remove:hover {
+  color: var(--color-accent-secondary);
+}
+
+.repo-loading,
+.repo-failed {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* fetched description: clamped to a few lines so cards on the same row
+   keep a consistent height; wraps at word boundaries, ellipsis overflow */
+.repo-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* personal note: visually distinct from the fetched description —
+   italic + muted + left rule, reads as "your commentary" */
+.repo-note {
+  margin: 0;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  border-left: 2px solid var(--color-border);
+  padding-left: 6px;
+}
+
+.repo-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.repo-star {
+  font-family: "Symbols Nerd Font", monospace;
+  margin-right: 3px;
+}
+
+/* tag chips + always-visible add row (they're user data, available on
+   every card regardless of fetch state) */
+.repo-tags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.repo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 1px 6px;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  text-transform: lowercase;
+}
+
+.repo-tag-remove {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.repo-tag-remove:hover {
+  color: var(--color-accent-secondary);
+}
+
+.repo-tag-add {
+  display: flex;
+  flex: 1 1 90px;
+  min-width: 0;
+  gap: 4px;
+}
+
+.repo-tag-add input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 0;
+}
+
+.repo-tag-add input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.repo-tag-add button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 0 6px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.repo-tag-add button:hover {
+  border-color: var(--color-accent);
+}
+
+/* autocomplete suggestions: tags already in use on this device */
+.repo-tag-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.repo-tag-suggestions:empty {
+  display: none;
+}
+
+.repo-tag-chip {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 11px;
+  padding: 1px 6px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.repo-tag-chip:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* per-card note editor (opens inside the card so the grid row stays
+   intact while the row stretches to fit) */
+.repo-note-edit {
+  display: flex;
+}
+
+.repo-note-edit textarea {
+  flex: 1;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  min-height: 48px;
+  resize: vertical;
+  border-radius: 0;
+}
+
+.repo-note-edit textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.repos-empty {
+  grid-column: 1 / -1;
+  padding: 16px 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+}

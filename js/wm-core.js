@@ -28,6 +28,7 @@ import './modules/agenda.js';
 import './modules/bookmarks.js';
 import './modules/watchlater.js';
 import './modules/goals.js';
+import './modules/repositories.js';
 
 import { DEFAULT_THEME_ID, applyTheme, getAllThemes } from './themes.js';
 import { loadState, saveState, getModuleData, setModuleData } from './persistence.js';
