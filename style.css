@@ -2647,3 +2647,37 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* hand-built SVG charts (no libraries): muted labels, accent bars */
+.dashboard-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dashboard-chart-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.dashboard-chart-empty {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.dashboard-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.chart-bar {
+  fill: var(--color-accent);
+}
+
+.chart-label {
+  fill: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 8px;
+}
