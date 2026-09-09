@@ -54,6 +54,8 @@ This is a **personal, single-user** project: no auth, no accounts, no backend, n
 
 ## Changelog
 
+- 2026-09-09 — Repositories: the hover-revealed add-tag input is now a floating overlay — absolutely positioned just above the tag chip row (anchored to the tags container) instead of reserving layout space, so no empty gap sits in the card while it's hidden and nothing shifts when it appears. Elevated popover treatment (solid `--color-bg` fill + 2px `--color-border`, matching the launcher/theme popovers — floating windows remain the only shadow users). Reveal conditions: card hover, focused input, or uncommitted draft text (a `has-draft` class toggled from the input listener) so mouse-out never discards a draft. Tag chips, suggestions, and add/commit behavior unchanged.
+
 - 2026-09-09 — Repositories: the per-card add-tag input is now hover-revealed (visible on card hover or while the input is focused) instead of always visible; existing tag chips are unaffected. Display-only change — tag adding works exactly as before.
 
 - 2026-09-09 — Repositories refinements: card titles now show the repo name only (owner demoted to a small secondary label under the title; avatar and full-URL link unchanged). Added a filter row below the add input: a live case-insensitive repo-name search and clickable tag-filter chips (aggregated from all tags in use, AND logic, filled-accent active state, clear-filters action, "no repos match" empty state). Search/tag filters and the search query are view state — deliberately not persisted, they reset on reload. Reordering is filter-aware (swaps with the visible neighbour, like Tasks/Goals).

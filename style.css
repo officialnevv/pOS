@@ -2589,6 +2589,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  position: relative; /* anchors the floating .repo-tag-add overlay */
 }
 
 .repo-tag {
@@ -2616,23 +2617,37 @@ body {
   color: var(--color-accent-secondary);
 }
 
+/* the add-tag control floats above the chip row (anchored to
+   .repo-tags) instead of occupying layout space — zero footprint while
+   hidden, no card content shifts when it appears. Elevated like the
+   launcher/theme popovers: solid bg fill + 2px border (floating
+   *windows* are the only shadow users in pOS). */
 .repo-tag-add {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 4px);
+  z-index: 1;
   display: flex;
-  flex: 1 1 90px;
-  min-width: 0;
   gap: 4px;
-  /* hover-revealed: hidden until the card is hovered (or focused, so an
-     in-progress tag never vanishes mid-typing); visibility (not display)
-     keeps the tag row from reflowing on hover */
-  visibility: hidden;
+  padding: 4px;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 0;
   opacity: 0;
+  visibility: hidden;
+  pointer-events: none; /* invisible state must not block the chips */
   transition: opacity 0.12s ease, visibility 0.12s ease;
 }
 
+/* revealed by card hover, a focused input, or uncommitted draft text —
+   so the entry never vanishes mid-typing */
 .repo-card:hover .repo-tag-add,
-.repo-tag-add:focus-within {
-  visibility: visible;
+.repo-tag-add:focus-within,
+.repo-tag-add.has-draft {
   opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .repo-tag-add input {

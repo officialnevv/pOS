@@ -398,6 +398,15 @@ function mount(container, context) {
     tagInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') addTag();
     });
+    // the floating input stays revealed while it holds uncommitted text,
+    // so moving the mouse off the card never discards a draft
+    const syncDraft = () => {
+      tagAdd.classList.toggle('has-draft', tagInput.value.trim() !== '');
+    };
+    tagInput.addEventListener('input', () => {
+      syncDraft();
+      renderSuggestions();
+    });
     tagAdd.append(tagInput, tagBtn);
     tagList.appendChild(tagAdd);
     li.appendChild(tagList);
@@ -426,7 +435,6 @@ function mount(container, context) {
         suggestions.appendChild(chip);
       }
     }
-    tagInput.addEventListener('input', renderSuggestions);
     renderSuggestions();
     li.appendChild(suggestions);
 
