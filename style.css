@@ -2513,6 +2513,273 @@ body {
 }
 
 /* ---------------------------------------------------------------
+   Shopping Cart module — manual shopping/tracking list: validated
+   manual entry (name + price, optional link/site), quantity steppers,
+   purchased toggles and split remaining/purchased totals.
+   Data persists under moduleData.shoppingCart (Spec §9).
+   --------------------------------------------------------------- */
+
+.cart-add {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.cart-add input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  border-radius: 0;
+}
+
+.cart-add input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.cart-add button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.cart-add button:hover {
+  border-color: var(--color-accent);
+}
+
+.cart-error {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--color-accent-secondary);
+}
+
+.cart-error:empty {
+  display: none;
+}
+
+.cart-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.cart-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 12px;
+}
+
+.cart-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: transparent; /* unchecked: box only, no glyph */
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 0;
+  transition: color 0.1s ease, border-color 0.1s ease;
+}
+
+.cart-check:hover {
+  border-color: var(--color-accent);
+}
+
+.cart-item.purchased .cart-check {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* purchased items read as "done": dimmed + struck-through, staying in
+   the list (Watch Later's watched convention) */
+.cart-item.purchased .cart-link,
+.cart-item.purchased .cart-name {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.cart-item.purchased .cart-price,
+.cart-item.purchased .cart-line-total,
+.cart-item.purchased .cart-qty-value {
+  color: var(--color-text-muted);
+}
+
+.cart-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cart-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cart-link,
+.cart-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-fg);
+  text-decoration: none;
+}
+
+.cart-link:hover {
+  color: var(--color-accent);
+}
+
+.cart-site {
+  flex: none;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.cart-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-price {
+  color: var(--color-fg);
+}
+
+.cart-line-total {
+  color: var(--color-text-muted);
+}
+
+.cart-qty {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  margin-top: 1px;
+}
+
+.cart-qty-btn {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.cart-qty-btn:hover {
+  border-color: var(--color-accent);
+}
+
+.cart-qty-value {
+  min-width: 2ch;
+  text-align: center;
+  color: var(--color-fg);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-actions {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+
+.cart-move,
+.cart-remove {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-family: "Symbols Nerd Font", monospace;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  flex: none;
+}
+
+.cart-move:hover:not(:disabled) {
+  color: var(--color-accent);
+}
+
+.cart-move:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.cart-remove {
+  font: inherit;
+  font-size: 13px;
+}
+
+.cart-remove:hover {
+  color: var(--color-accent-secondary);
+}
+
+.cart-totals {
+  padding: 10px 12px;
+  border-top: 2px solid var(--color-border);
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-total-remaining {
+  color: var(--color-fg);
+  font-weight: 700;
+}
+
+.cart-total-purchased {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.cart-empty {
+  padding: 16px 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------
    Dashboard module — read-only summary of every other module
    (Spec §8, exception): one clickable card per module, snapshot
    rendered at mount time.

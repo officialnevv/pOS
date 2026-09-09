@@ -29,6 +29,7 @@ import './modules/watchlater.js';
 import './modules/goals.js';
 import './modules/repositories.js';
 import './modules/dashboard.js';
+import './modules/shoppingcart.js';
 
 import { DEFAULT_THEME_ID, applyTheme, getAllThemes } from './themes.js';
 import { loadState, saveState, getModuleData, setModuleData } from './persistence.js';
