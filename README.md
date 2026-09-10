@@ -1,6 +1,6 @@
 # pOS
 
-A personal dashboard that behaves exactly like your tiling window manager.
+My personal homepage, built to behave like i3/dwm, tiling windows, workspaces, keyboard-driven.
 
 I built it mostly because I wanted to, it's how I like to organize scratch stuff, lists, notes, whatever I end up plugging into it, and I prefer keyboard-driven tiling to clicking floating cards around. If that sounds like you too, read on.
 
