@@ -1,8 +1,8 @@
 # pOS
 
-I wanted a personal dashboard that behaved like my Linux setup, so I built one: a tiling window manager that runs in a browser tab. There's no desktop environment underneath, pOS itself draws the windows, the workspaces, and the bar. "Apps" are just modules that render into those windows, and the whole thing lives in one browser tab with no server behind it.
+I wanted a personal dashboard that behaved like my Linux setup, so I thought of pOS. 
 
-I built it mostly because I wanted to. It's how I like to organize scratch stuff, lists, notes, whatever I end up plugging into it, and I prefer keyboard-driven tiling to clicking floating cards around. If that sounds like you too, read on.
+I built it mostly because I wanted to, it's how I like to organize scratch stuff, lists, notes, whatever I end up plugging into it, and I prefer keyboard-driven tiling to clicking floating cards around. If that sounds like you too, read on.
 
 ## What it is
 

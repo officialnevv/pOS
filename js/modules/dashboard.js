@@ -3,18 +3,17 @@
  * ----------------------------------------------------------------------
  * Dashboard module — a read-only summary of every other module (Spec §8).
  *
- * ARCHITECTURE EXCEPTION (explicit, documented in AGENT.md): every other
- * module is self-contained and touches only its own moduleData slice.
- * The Dashboard is inherently a cross-cutting overview, so it READS the
- * other modules' slices directly via persistence.getModuleData() — but
- * it NEVER writes to them, and it keeps no moduleData of its own: it is
- * a pure read view. The summary is a snapshot taken at mount time; there
- * is no cross-module event bus, so it does not live-update.
+ * This is the one module that breaks the self-containment rule, on
+ * purpose: it reads the other modules' slices directly via
+ * persistence.getModuleData() rather than keeping data of its own. It
+ * never writes to them, and it has no moduleData slice of its own — the
+ * summary is a snapshot taken at mount, and without a cross-module event
+ * bus it doesn't live-update.
  *
- * Each summary card is clickable and launches/focuses that module via
- * context.openModule — the WM-provided, singleton-aware launch hook
- * (same path as the module launcher). The module also re-opens itself
- * into workspace 1 on every page load (bootstrap check in wm-core.js).
+ * Cards are clickable and launch/focus their module via
+ * context.openModule (the same singleton-aware path the launcher uses).
+ * The module also re-opens itself into workspace 1 on every page load
+ * (bootstrap check in wm-core.js).
  */
 
 import { registerModule, getModule } from '../modules.js';
@@ -26,10 +25,10 @@ const DASHBOARD_ICON = '\uf0e4'; // nf-fa-tachometer
 // (same scale as the Tasks module)
 const TASK_PRIORITY_RANK = { high: 3, medium: 2, low: 1, none: 0 };
 
-// one summary builder per module: reads that module's slice (READ-ONLY)
-// and returns { primary, preview? } — primary is the headline line,
-// preview an optional muted secondary line. Never-used slices (null)
-// get the same sensible empty state as empty ones.
+// one summary builder per module — reads its slice (never writes) and
+// returns { primary, preview? }: the headline line plus an optional
+// muted secondary. A slice that was never saved gets the same empty
+// state as an empty one.
 const summaries = {
   tasks() {
     const open = (getModuleData('tasks') ?? []).filter((task) => !task.done);
@@ -332,7 +331,7 @@ const SUMMARY_ORDER = [
 ];
 
 // bento tier per module: chart-bearing summaries get larger cards
-// (see .card-wide/.card-mid in style.css); single-line summaries stay 1x1
+// (see .card-wide/.card-mid in style.css); everything else is 2x1
 const CARD_SIZES = {
   tasks: 'card-wide',
   pomodoro: 'card-wide',

@@ -31,8 +31,8 @@ const MIN_QUANTITY = 1;
 // single assumed currency; amounts are plain numbers in moduleData
 const money = (amount) => `$${amount.toFixed(2)}`;
 
-// Tolerate old/partial saved entries: missing fields default to quantity
-// 1, not purchased, no link/site and no completion time.
+// Tolerate old/partial saved entries: missing fields default to
+// quantity 1, not purchased, no link/site.
 function normalize(list) {
   return (Array.isArray(list) ? list : [])
     .map((item) => ({
