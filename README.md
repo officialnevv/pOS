@@ -11,13 +11,13 @@ I built it mostly because I wanted to, it's how I like to organize scratch stuff
 
 ## Modules
 
-- Goals, similar to tasks, where you can track long-term goals with progress and checkpoints.
-- Notes, a simple notes app, with markdown support.
-- Pomodoro, just your average pomodoro timer, with controlable work and break times.
-- Repositories, save your favorite repos from GitHub, but you can already do that on GitHub so...
-- Shopping Cart, added this later on, one place to save all your upcoming purchases.
-- Tasks, most beneficial so far, create tasks, add a description, and a date.
-- Watch Later, keeping all my watch laters in one place (videos, playlists), with YouTube title support.  
+- **Goals**, similar to tasks, where you can track long-term goals with progress and checkpoints.
+- **Notes**, a simple notes app, with markdown support.
+- **Pomodoro**, just your average pomodoro timer, with controlable work and break times.
+- **Repositories**, save your favorite repos from GitHub, but you can already do that on GitHub so...
+- **Shopping Cart**, added this later on, one place to save all your upcoming purchases.
+- **Tasks**, most beneficial so far, create tasks, add a description, and a date.
+- **Watch Later**, keeping all my watch laters in one place (videos, playlists), with YouTube title support.  
 
 ## Running it
 
