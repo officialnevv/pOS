@@ -6,74 +6,24 @@
   <title>pOS</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
-  <!--
-    Fonts & Icons (self-hosted in assets/fonts/, offline-capable):
-    - Geist Mono / JetBrains Mono
-    - Nerd Font glyphs for module + pill icons
-  -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body data-theme="everforest">
 
-  <!-- ============================================================
-       Lock Screen overlay
-       Rendered/managed by js/lockscreen.js; shown on page load,
-       PIN-gated (auto-unlock + fade), purely client-side.
-       ============================================================ -->
-
-  <!-- ============================================================
-       Top Pills
-       Three floating shell pills, one per component:
-       Left: "pOS" | Center: live date | Right: live time
-       The strip reserves space at the top edge (#workspace-root
-       starts below it). Sharp corners, like everything else in pOS.
-       ============================================================ -->
   <div id="top-pills">
     <div class="top-pill" id="top-pill-left">pOS</div>
-    <div class="top-pill" id="top-pill-center"><!-- live date, JS-driven (wm-core) --></div>
-    <div class="top-pill" id="top-pill-right"><!-- live time, JS-driven (wm-core) --></div>
+    <div class="top-pill" id="top-pill-center"> <!-- live date, JS-driven (wm-core) --> </div>
+    <div class="top-pill" id="top-pill-right"> <!-- live time, JS-driven (wm-core) --> </div>
   </div>
 
-  <!-- ============================================================
-       Workspace Root
-       All tiled/floating windows render inside here.
-       Empty workspaces show a centered hint ("Alt+W to launch
-       a module"). Windows themselves are created by wm-core.js.
-       ============================================================ -->
   <main id="workspace-root">
     <!-- Empty-workspace hint element will be injected/toggled by wm-core -->
   </main>
 
-  <!-- ============================================================
-       Workspace Indicator Pill
-       Floating pill at the bottom:
-       - workspace numbers 1-3 always visible, 4-9 when non-empty
-       - theme toggle icon (opens theme picker)
-       ============================================================ -->
   <nav id="workspace-pill">
     <!-- populated dynamically by wm-core.js -->
   </nav>
 
-  <!-- ============================================================
-       Module Launcher popup
-       Opened via Alt+W; centered popup with fuzzy-filtered,
-       keyboard-navigable vertical list of registered modules.
-       ============================================================ -->
-  <!-- <div id="launcher"> ... </div> -->
-
-  <!-- ============================================================
-       Theme Picker popup
-       Opened via the pill's theme toggle icon; centered popup with
-       swatch previews of every registered theme.
-       ============================================================ -->
-  <!-- <div id="theme-picker"> ... </div> -->
-
-  <!--
-    Entry point. wm-core.js is the app bootstrap: it imports the
-    module registry, themes, persistence, and the lock screen, then
-    initializes the window manager. Modules (when any are installed)
-    register themselves via side-effect imports in wm-core.js.
-  -->
   <script type="module" src="js/wm-core.js"></script>
 </body>
 </html>
