@@ -1326,130 +1326,6 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   Watch Later module — site-agnostic saved video links.
-   oEmbed titles for YouTube only; persists under
-   moduleData.watchLater as { url, title, watched } entries.
-   --------------------------------------------------------------- */
-.watchlater-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  list-style: none;
-  margin: 0;
-  padding: 4px 0;
-}
-
-.watchlater-item {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 6px 12px;
-}
-
-/* watched entries read as "done": dimmed with a strikethrough title */
-.watchlater-item.watched .watchlater-link {
-  color: var(--color-text-muted);
-  text-decoration: line-through;
-}
-
-.watchlater-check {
-  width: 16px;
-  height: 16px;
-  flex: none;
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: transparent; /* unchecked: box only, no glyph */
-  font-family: "Symbols Nerd Font", monospace;
-  font-size: 11px;
-  line-height: 1;
-  padding: 0;
-  cursor: pointer;
-  border-radius: 0;
-  transition: color 0.1s ease, border-color 0.1s ease;
-}
-
-.watchlater-check:hover {
-  border-color: var(--color-accent);
-}
-
-.watchlater-item.watched .watchlater-check {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.watchlater-link {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--color-fg);
-  text-decoration: none;
-}
-
-.watchlater-link:hover {
-  color: var(--color-accent);
-  text-decoration: underline;
-}
-
-.watchlater-title-input {
-  flex: none;
-  width: 180px;
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-fg);
-  font: inherit;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 0;
-}
-
-.watchlater-title-input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.watchlater-title-commit {
-  background: none;
-  border: none;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-weight: bold;
-  cursor: pointer;
-  padding: 0 4px;
-  flex: none;
-}
-
-.watchlater-title-commit:hover {
-  color: var(--color-accent);
-}
-
-.watchlater-remove {
-  background: none;
-  border: none;
-  color: var(--color-text-muted);
-  font: inherit;
-  cursor: pointer;
-  padding: 0 4px;
-  flex: none;
-}
-
-.watchlater-remove:hover {
-  color: var(--color-accent-secondary);
-}
-
-.watchlater-empty {
-  display: grid;
-  place-items: center;
-  padding: 24px 12px;
-  color: var(--color-text-muted);
-}
-
-/* ---------------------------------------------------------------
    Goals module — goals with categories, target dates, checkpoints
    and derived or manual progress.
    Data persists under moduleData.goals.
@@ -1498,8 +1374,7 @@ body {
   padding: 8px 12px;
 }
 
-/* archived goals read as "done": dimmed with a struck-through title
-   (same treatment idea as Watch Later's watched entries) */
+/* archived goals read as "done": dimmed with a struck-through title */
 .goal-item.archived {
   opacity: 0.45;
 }
@@ -2202,7 +2077,7 @@ body {
 }
 
 /* purchased items read as "done": dimmed + struck-through, staying in
-   the list (Watch Later's watched convention) */
+   the list (the shared purchased/watched convention) */
 .cart-item.purchased .cart-link,
 .cart-item.purchased .cart-name {
   color: var(--color-text-muted);

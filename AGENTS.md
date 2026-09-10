@@ -148,10 +148,6 @@ lock screen. "Apps" are modules that render into WM windows.
   - **Pomodoro** — live focus timer with an SVG progress ring, automatic
     work/break switching (with a flash cue), and custom +/- steppers
     (1–180 minutes). Nothing is persisted — the timer is session-only.
-  - **Watch Later** — saved video links from any site; YouTube links get
-    a one-shot oEmbed title fetch (manual title entry as fallback);
-    watched entries dim with a strikethrough but stay listed; caret
-    reordering.
   - **Goals** — long-term goals with description, category (free text
     with suggestions drawn from previously used categories), optional
     target date, and checkpoints (progress derives from completed
@@ -190,7 +186,6 @@ lock screen. "Apps" are modules that render into WM windows.
   - `tasks`: array of `{ text, done, dueDate, priority, description }`
   - `notes`: `{ notes: [{ title, body }], sidebarWidth }`
   - `pomodoro`: none (live timer, deliberately never saved)
-  - `watchLater`: array of `{ url, title, watched }`
   - `goals`: array of `{ id, title, description, category, targetDate,
     checkpoints: [{ id, label, done }], manualProgress, createdAt,
     archived }`
@@ -238,6 +233,10 @@ untrue? If yes, fix the doc before finishing.
 
 ## Changelog
 
+- 2026-09-10 — Removed the Watch Later module (file, registry import,
+  CSS section, data shape). Its YouTube oEmbed fetch went with it;
+  nothing else used it. Stale `moduleData.watchLater` slices are pruned
+  by the existing cleanup on next load.
 - 2026-09-10 — Documentation consolidated: this file (renamed from
   AGENT.md) is now the sole reference, and personal-os-spec.md was
   deleted. Every "Spec §N" pointer in code comments was removed with it.

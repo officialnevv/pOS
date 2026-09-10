@@ -17,7 +17,6 @@ I built it mostly because I wanted to, it's how I like to organize scratch stuff
 - Repositories, save your favorite repos from GitHub, but you can already do that on GitHub so...
 - Shopping Cart, added this later on, one place to save all your upcoming purchases.
 - Tasks, most beneficial so far, create tasks, add a description, and a date.
-- Watch Later, keeping all my watch laters in one place (videos, playlists), with YouTube title support.  
 
 ## Running it
 
@@ -38,8 +37,8 @@ The page loads locked. The PIN is 000000, it's hardcoded client-side, so it's a 
 | `Alt + F` | Toggle fullscreen for the focused window |
 | `Alt + Q` | Close the focused window |
 | `Alt + W` | Open the module launcher |
-| `Alt + 1` – `Alt + 9` | Switch to workspace 1–9 |
-| `Alt + Shift + 1` – `Alt + Shift + 9` | Move the focused window to workspace 1–9 (the view follows it) |
+| `Alt + 1` â€“ `Alt + 9` | Switch to workspace 1â€“9 |
+| `Alt + Shift + 1` â€“ `Alt + Shift + 9` | Move the focused window to workspace 1â€“9 (the view follows it) |
 | `Alt + Left-Click` | Drag windows around, tiled and floating |
 | `Alt + Right-Click` | Resizes windows, tiled and floating |
 

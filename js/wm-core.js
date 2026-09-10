@@ -23,7 +23,6 @@ import './modules.js';
 import './modules/tasks.js';
 import './modules/notes.js';
 import './modules/pomodoro.js';
-import './modules/watchlater.js';
 import './modules/goals.js';
 import './modules/repositories.js';
 import './modules/shoppingcart.js';

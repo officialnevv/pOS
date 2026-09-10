@@ -8,7 +8,7 @@
  * inline), optionally a stored link (the name becomes a clickable link,
  * opened in a new tab) and a free-text site label. Quantity is adjusted
  * with a custom +/- stepper (Pomodoro/Goals pattern); purchased items
- * toggle dimmed/strikethrough like Watch Later's watched state and stay
+ * toggle dimmed/strikethrough (the shared purchased/watched convention)
  * in the list. Totals: "remaining" (unpurchased) always, plus a smaller
  * "purchased" total when any purchased items exist.
  *
