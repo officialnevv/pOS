@@ -12,7 +12,7 @@
  * goal as archived. Archived goals stay in the list, dimmed, and can be
  * un-archived via their pill; a toggle hides them by default. Data
  * persists as an array of goal objects under the module's own
- * moduleData.goals slice (Spec §9); array order is the display order.
+ * moduleData.goals slice; array order is the display order.
  * Entries saved before the extra fields existed are normalized on load.
  */
 

@@ -2,13 +2,13 @@
  * pOS — js/modules/notes.js
  * ----------------------------------------------------------------------
  * Notes module — multiple freeform notes with a title and body each
- * (Spec §8, as amended).
+ *.
  *
  * Registers itself with the module registry at import time; the WM core
  * only ever sees it through the registry. A small sidebar lists the
  * notes, the rest of the window is an inline editor (title input + body
  * textarea) with a preview toggle that renders the body's markdown.
- * Data persists under the module's own moduleData.notes slice (Spec §9)
+ * Data persists under the module's own moduleData.notes slice
  * as { notes: [{ title, body }…], sidebarWidth } — legacy bare-array
  * slices are normalized on load. The stored body is always the raw
  * markdown source — rendering is display-only.

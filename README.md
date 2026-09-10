@@ -40,8 +40,6 @@ The page loads locked. The PIN is 000000, it's hardcoded client-side, so it's a 
 | `Alt + W` | Open the module launcher |
 | `Alt + 1` – `Alt + 9` | Switch to workspace 1–9 |
 | `Alt + Shift + 1` – `Alt + Shift + 9` | Move the focused window to workspace 1–9 (the view follows it) |
-| `Alt + Shift + 1` – `Alt + Shift + 9` | Move the focused window to workspace 1–9 (the view follows it) |
-| `Alt + Shift + 1` – `Alt + Shift + 9` | Move the focused window to workspace 1–9 (the view follows it) |
 | `Alt + Left-Click` | Drag windows around, tiled and floating |
 | `Alt + Right-Click` | Resizes windows, tiled and floating |
 

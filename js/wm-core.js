@@ -155,7 +155,7 @@ function openWindow(moduleId) {
   return win;
 }
 
-/** Singleton-aware launch (Spec §5/§7): if the module is already open
+/** Singleton-aware launch: if the module is already open
  * anywhere, switch to that workspace and focus it — never duplicate. */
 function launchModule(moduleId) {
   for (let i = 0; i < state.workspaces.length; i++) {
@@ -177,7 +177,7 @@ function closeWindow(id) {
   if (idx === -1) return;
   const win = ws.windows[idx];
   ws.windows.splice(idx, 1);
-  unmountWindow(win); // give the module a chance to tear down (Spec §8)
+  unmountWindow(win); // give the module a chance to tear down
   if (win.state === 'tiled') {
     ws.dwindleTree = treeRemove(ws.dwindleTree, win.id); // sibling collapses in
   }
@@ -186,7 +186,7 @@ function closeWindow(id) {
     ? ws.windows[Math.min(idx, ws.windows.length - 1)].id
     : null;
   persistState();
-  render(); // empty workspace falls back to the hint (Spec §3/§5)
+  render(); // empty workspace falls back to the hint
 }
 
 /* ---------- focus ---------- */
@@ -460,7 +460,7 @@ function moveFocusedToWorkspace(id, targetIdx) {
   render(); // pill slot 4-9 visibility may change on either side
 }
 
-/* ---------- dwindle layout (Spec §4) ----------
+/* ---------- dwindle layout ----------
    Hyprland-style BSP: a per-workspace binary tree whose leaves are
    window ids. Internal nodes store their split ratio (default 0.5) AND
    their split axis ('v' = left/right, 'h' = top/bottom), fixed when the
@@ -625,7 +625,7 @@ function createWindowEl(win) {
   el.appendChild(content);
 
   // generic mount — the WM knows nothing about the module itself. The
-  // context gives it its own slice of moduleData (Spec §8/§9).
+  // context gives it its own slice of moduleData.
   const mod = getModule(win.moduleId);
   if (mod) {
     mod.mount(content, {
@@ -641,7 +641,7 @@ function createWindowEl(win) {
   return entry;
 }
 
-/** Unmount a module's DOM when its window closes (Spec §8). */
+/** Unmount a module's DOM when its window closes. */
 function unmountWindow(win) {
   const entry = windowEls.get(win.id);
   if (!entry) return;
@@ -681,7 +681,7 @@ function render() {
   const W = workspaceRoot.clientWidth;
   const H = workspaceRoot.clientHeight;
 
-  // Layout geometry, fully derived (Spec §4). All tiling happens inside
+  // Layout geometry, fully derived. All tiling happens inside
   // an area inset by WINDOW_GAP on every side (the outer gap); inner
   // gaps between adjacent windows come from HALF_GAP trims at each
   // internal boundary. Dwindle: walk the per-workspace BSP tree.
@@ -737,7 +737,7 @@ function setRect(el, rect) {
   el.style.height = `${rect.h}px`;
 }
 
-/* ---------- persistence (Spec §9) ----------
+/* ---------- persistence ----------
    Everything lives under the single 'personal-os-state' JSON key:
    { activeWorkspace, activeTheme, workspaces: { "1".. "9" }, moduleData }
    persistState() merges the WM slice over the loaded blob so the
@@ -759,8 +759,8 @@ function serializeWindows(ws) {
 function persistState() {
   const prev = loadState() ?? {};
   saveState({
-    ...prev, // preserve moduleData (Spec §9: modules own their data)
-    activeWorkspace: state.activeWorkspace + 1, // 1-based, per spec shape
+    ...prev, // preserve moduleData
+    activeWorkspace: state.activeWorkspace + 1, // 1-based display number
     activeTheme: document.documentElement.dataset.theme || DEFAULT_THEME_ID,
     workspaces: Object.fromEntries(
       state.workspaces.map((ws, i) => [
@@ -844,7 +844,7 @@ function treeLeaves(node, out = []) {
   return out;
 }
 
-/* ---------- keybinds (Spec §10) ---------- */
+/* ---------- keybinds ---------- */
 
 function bindKeybinds() {
   window.addEventListener('keydown', (e) => {
@@ -859,7 +859,7 @@ function bindKeybinds() {
     else if (key === 'l') cycleFocus(+1);
     else if (key === 'j') cycleFocus(+1);
     else if (key === 'k') cycleFocus(-1);
-    else if (key === 'w') toggleLauncher(); // open module launcher (Spec §7)
+    else if (key === 'w') toggleLauncher(); // open module launcher
     else if (key === 'v' && !e.shiftKey) toggleFloating(focusedWindowId);
     else if (key === 'f' && !e.shiftKey) toggleFullscreen(focusedWindowId);
     else if (key === 'q' && !e.shiftKey) closeWindow(focusedWindowId);
@@ -882,7 +882,7 @@ function bindKeybinds() {
   });
 }
 
-/* ---------- mouse behavior (Spec §11) ---------- */
+/* ---------- mouse behavior ---------- */
 
 // active drag session: { type: 'move'|'resize'|'swap'|'ratio', ... }
 let activeDrag = null;
@@ -1087,7 +1087,7 @@ function onDragEnd(e) {
   }
 }
 
-/* ---------- workspace indicator pill (Spec §3) ---------- */
+/* ---------- workspace indicator pill ---------- */
 
 const ICON_THEME = '\uf042'; // Nerd Font "adjust" glyph (half-filled circle)
 
@@ -1096,7 +1096,7 @@ function renderPill() {
   if (!pill) return;
   pill.innerHTML = '';
 
-  // theme toggle icon sits right of the workspace numbers (Spec §3)
+  // theme toggle icon sits right of the workspace numbers
   const themeBtn = document.createElement('span');
   themeBtn.className = 'pill-icon';
   themeBtn.textContent = ICON_THEME;
@@ -1104,7 +1104,7 @@ function renderPill() {
   themeBtn.addEventListener('click', toggleThemePicker);
 
   for (let n = 1; n <= WORKSPACE_COUNT; n++) {
-    // slots 1-3 always visible; 4-9 only while populated (Spec §3)
+    // slots 1-3 always visible; 4-9 only while populated
     if (n > 3 && !state.workspaces[n - 1].windows.length) continue;
     const slot = document.createElement('span');
     slot.className = 'pill-slot' + (n - 1 === state.activeWorkspace ? ' active' : '');
@@ -1116,7 +1116,7 @@ function renderPill() {
   pill.appendChild(themeBtn);
 }
 
-/* ---------- module launcher (Spec §7) ---------- */
+/* ---------- module launcher ---------- */
 
 let launcher = null; // { overlay, input, list, filtered, selected }
 
@@ -1228,10 +1228,10 @@ function confirmLauncher() {
   const mod = launcher?.filtered[launcher.selected];
   if (!mod) return;
   closeLauncher();
-  launchModule(mod.id); // singleton-aware (Spec §5/§7)
+  launchModule(mod.id); // singleton-aware
 }
 
-/* ---------- theme picker (Spec §6) ---------- */
+/* ---------- theme picker ---------- */
 
 let themePicker = null;
 
@@ -1271,7 +1271,7 @@ function openThemePicker() {
 
     item.addEventListener('click', () => {
       applyTheme(theme.id); // instant via CSS custom properties
-      persistState(); // theme change is a meaningful change (Spec §9)
+      persistState(); // theme change is a meaningful change
       closeThemePicker();
     });
     list.appendChild(item);
@@ -1299,15 +1299,15 @@ function closeThemePicker() {
  */
 function init() {
   // Element refs FIRST: restoreState()'s legacy-axis migration measures
-  // the workspace root (Spec §9), and render() needs it too.
+  // the workspace root, and render() needs it too.
   workspaceRoot = document.getElementById('workspace-root');
-  applyTheme(restoreState()); // restore WM state + theme (Spec §9)
+  applyTheme(restoreState()); // restore WM state + theme
   startClock();
 
   bindKeybinds();
   bindMouse();
   window.addEventListener('resize', render);
-  initLockScreen(); // lock on every page load (Spec §12)
+  initLockScreen(); // lock on every page load
   initFavicon();
 
   render(); // initial paint: empty-workspace hint + pill

@@ -1,7 +1,7 @@
 /*
  * pOS — js/modules/repositories.js
  * ----------------------------------------------------------------------
- * Repositories module — a personal library of GitHub repos (Spec §8).
+ * Repositories module — a personal library of GitHub repos.
  *
  * Add a repo URL (https://github.com/owner/repo): owner/name are parsed
  * from it and description, stars, primary language and the owner avatar
@@ -15,7 +15,7 @@
  * Cards render in a responsive grid ("shelf" layout). Each entry also
  * carries an always-visible personal note (Tasks description convention).
  * Data persists as an array of repo objects under the module's own
- * moduleData.repositories slice (Spec §9); array order is the display
+ * moduleData.repositories slice; array order is the display
  * order. Entries saved before the extra fields existed are normalized
  * on load.
  */

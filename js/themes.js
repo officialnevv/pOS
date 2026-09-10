@@ -1,7 +1,7 @@
 /*
  * pOS — js/themes.js
  * ----------------------------------------------------------------------
- * Theme definitions and switching (Spec §6).
+ * Theme definitions and switching.
  *
  * THEMES is an append-only registry — structured like the module
  * registry: adding a theme = appending one entry here, no other file
@@ -20,7 +20,7 @@
 export const DEFAULT_THEME_ID = 'everforest';
 
 /**
- * Append-only theme registry (Spec §6) — structured like the module
+ * Append-only theme registry — structured like the module
  * registry: adding a theme = appending one entry here, no other file
  * changes. Each theme defines the 6 core colors:
  *   bg (background), fg (text), accent, border (window/tile borders
@@ -164,7 +164,7 @@ export const THEMES = [
 ];
 
 /**
- * Apply a theme by id: writes its 5 core colors as CSS custom
+ * Apply a theme by id: writes its 6 core colors as CSS custom
  * properties on the root element (<html>) and mirrors the theme id as
  * a data-theme attribute for any attribute-based styling hooks.
  * Falls back to the default theme if the id is unknown.

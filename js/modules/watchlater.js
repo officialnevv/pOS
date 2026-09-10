@@ -2,7 +2,7 @@
  * pOS — js/modules/watchlater.js
  * ----------------------------------------------------------------------
  * Watch Later module — saved video links, not tied to any specific site
- * (Spec §8). Add a URL:
+ *. Add a URL:
  *   - YouTube links get an automatic title fetch via YouTube's public
  *     oEmbed endpoint (no API key):
  *       https://www.youtube.com/oembed?url={url}&format=json
@@ -14,7 +14,7 @@
  * strikethrough) and a remove button.
  *
  * Entries persist as an array of { url, title, watched } under the
- * module's own moduleData.watchLater slice (Spec §9). Partial/legacy
+ * module's own moduleData.watchLater slice. Partial/legacy
  * entries are normalized on load.
  */
 

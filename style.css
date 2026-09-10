@@ -2,7 +2,7 @@
  * pOS — style.css
  * ----------------------------------------------------------------------
  * Global stylesheet. All colors come from theme CSS custom properties
- * (Spec §6): themes swap a `data-theme` attribute + --color-* variables
+ *: themes swap a `data-theme` attribute + --color-* variables
  * on the root element (via js/themes.js) so all styling references
  * var(--color-*) and switching is instant.
  *
@@ -65,7 +65,7 @@
 /* ---------------------------------------------------------------
    2. Theme variables — fallback defaults (Everforest dark).
       js/themes.js overwrites these live on the root element when a
-      theme is applied. 6 core colors per theme (Spec §6):
+      theme is applied. 6 core colors per theme:
       background, foreground, accent, border (borders/chrome only),
       text-muted, secondary accent.
    --------------------------------------------------------------- */
@@ -85,7 +85,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  border-radius: 0; /* sharp corners everywhere, per Spec §2 */
+  border-radius: 0; /* sharp corners everywhere */
 }
 
 body {
@@ -97,7 +97,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   4. Top pills — three floating shell pills (Spec §2):
+   4. Top pills — three floating shell pills:
       left: project name | center: live date | right: live time.
       The 36px strip reserves space at the top edge (#workspace-root
       starts below it, and floating drags clamp to the root, so
@@ -151,7 +151,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   5. Workspace root + empty-state hint (Spec §3)
+   5. Workspace root + empty-state hint
    --------------------------------------------------------------- */
 #workspace-root {
   position: fixed;
@@ -185,7 +185,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   6. Windows (Spec §2): 2px solid border, no chrome, sharp corners.
+   6. Windows: 2px solid border, no chrome, sharp corners.
    Geometry (left/top/width/height) is set inline by wm-core.js.
    --------------------------------------------------------------- */
 .window {
@@ -213,7 +213,7 @@ body {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
 }
 
-/* window content area — modules mount their DOM here (Spec §8) */
+/* window content area — modules mount their DOM here */
 .window-content {
   width: 100%;
   height: 100%;
@@ -223,7 +223,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   Module-embedded titles (Spec §2/§8): each module renders its own
+   Module-embedded titles: each module renders its own
    icon + name inside its content; styled to look like part of the
    window, not a WM control.
    --------------------------------------------------------------- */
@@ -285,7 +285,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   8. Workspace indicator pill (Spec §3): floating, bottom-centered;
+   8. Workspace indicator pill: floating, bottom-centered;
    slots 1-3 always, 4-9 only while populated; layout + theme icons.
    --------------------------------------------------------------- */
 #workspace-pill {
@@ -348,7 +348,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   9. Module launcher popup (Spec §7): centered, input on top,
+   9. Module launcher popup: centered, input on top,
    vertical icon+name list, fuzzy-filtered, keyboard-navigable.
    --------------------------------------------------------------- */
 #launcher {
@@ -421,7 +421,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   10. Theme picker popup (Spec §6): centered, swatch previews.
+   10. Theme picker popup: centered, swatch previews.
    --------------------------------------------------------------- */
 #theme-picker {
   position: fixed;
@@ -480,7 +480,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   11. Lock screen (Spec §12): full-screen theme-aware overlay,
+   11. Lock screen: full-screen theme-aware overlay,
    non-editable "pOS" label, PIN input, auto-unlock with fade-out,
    --------------------------------------------------------------- */
 #lock-screen {
@@ -551,8 +551,8 @@ body {
   animation: lock-shake 0.3s;
 }
 /* ---------------------------------------------------------------
-   Tasks module — checkbox to-do list (Spec §8). Data persists under
-   moduleData.tasks (Spec §9).
+   Tasks module — checkbox to-do list. Data persists under
+   moduleData.tasks.
    --------------------------------------------------------------- */
 .tasks-list {
   flex: 1;
@@ -801,8 +801,8 @@ body {
 
 /* ---------------------------------------------------------------
    Notes module — multiple titled notes with inline editing and a
-   markdown preview toggle (Spec §8).
-   Data persists under moduleData.notes (Spec §9).
+   markdown preview toggle.
+   Data persists under moduleData.notes.
    --------------------------------------------------------------- */
 .notes {
   display: flex;
@@ -1147,7 +1147,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   Pomodoro module — live focus timer (Spec §8, amendment). Not
+   Pomodoro module — live focus timer. Not
    persisted: session-only state, resets on page load. Centerpiece:
    SVG progress ring with the countdown in its center; the ring
    depletes as the phase counts down and refills on phase switch.
@@ -1326,7 +1326,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   Watch Later module — site-agnostic saved video links (Spec §8).
+   Watch Later module — site-agnostic saved video links.
    oEmbed titles for YouTube only; persists under
    moduleData.watchLater as { url, title, watched } entries.
    --------------------------------------------------------------- */
@@ -1452,7 +1452,7 @@ body {
 /* ---------------------------------------------------------------
    Goals module — goals with categories, target dates, checkpoints
    and derived or manual progress.
-   Data persists under moduleData.goals (Spec §9).
+   Data persists under moduleData.goals.
    --------------------------------------------------------------- */
 
 /* archived show/hide toggle above the list */
@@ -1905,7 +1905,7 @@ body {
    Repositories module — GitHub repo library: responsive card grid,
    one-shot metadata fetch from GitHub's public API, manual
    refresh/retry per card.
-   Data persists under moduleData.repositories (Spec §9).
+   Data persists under moduleData.repositories.
    --------------------------------------------------------------- */
 
 /* inline validation error for non-github URLs (hidden while empty) */
@@ -2143,7 +2143,7 @@ body {
    Shopping Cart module — manual shopping/tracking list: validated
    manual entry (name + price, optional link/site), quantity steppers,
    purchased toggles and split remaining/purchased totals.
-   Data persists under moduleData.shoppingCart (Spec §9).
+   Data persists under moduleData.shoppingCart.
    --------------------------------------------------------------- */
 
 .cart-error {

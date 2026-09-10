@@ -1,7 +1,7 @@
 /*
  * pOS — js/modules/pomodoro.js
  * ----------------------------------------------------------------------
- * Pomodoro module — a live focus timer (Spec §8, amendment).
+ * Pomodoro module — a live focus timer.
  *
  * Centerpiece is an SVG progress ring: the mm:ss countdown sits in the
  * middle and a circular stroke depletes around it as the current phase
@@ -15,7 +15,7 @@
  * automatically and keeps running; the time display flashes and the ring
  * refills on the switch as a visual cue.
  *
- * Persistence is deliberately partial (Spec §9): the live countdown
+ * Persistence is deliberately partial: the live countdown
  * (phase, remaining time, running state) resets on page reload and is
  * never saved. The tick interval lives in
  * mount scope; unmount clears it so a closed window stops ticking.
@@ -195,7 +195,7 @@ function mount(container) {
     }
   }
 
-  // visual cue on automatic phase switches (Spec amendment: optional)
+  // visual cue on automatic phase switches
   function flash() {
     timeEl.classList.add('flash');
     setTimeout(() => timeEl.classList.remove('flash'), 800);

@@ -1,7 +1,7 @@
 /*
  * pOS — js/modules/shoppingcart.js
  * ----------------------------------------------------------------------
- * Shopping Cart module — a manual shopping/tracking list (Spec §8).
+ * Shopping Cart module — a manual shopping/tracking list.
  *
  * Closest to Tasks-style reordering: add an item with a name and a
  * numeric price (validated
@@ -15,7 +15,7 @@
  * No checkout integration, no price/title auto-fetch, no currency
  * handling — amounts are plain numbers rendered with a "$" prefix in a
  * single assumed currency. Data persists as an array of item objects
- * under the module's own moduleData.shoppingCart slice (Spec §9); array
+ * under the module's own moduleData.shoppingCart slice; array
  * order is the display order. Entries saved before the extra fields
  * existed are normalized on load.
  */

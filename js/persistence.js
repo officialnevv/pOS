@@ -1,13 +1,12 @@
 /*
  * pOS — js/persistence.js
  * ----------------------------------------------------------------------
- * localStorage persistence (Spec §9).
+ * localStorage persistence.
  *
  * Everything lives under a single JSON key, 'personal-os-state':
  *   { activeWorkspace, activeTheme, workspaces: {...}, moduleData: {...} }
  *
- * Modules persist their own data keyed by module id (Spec §9 — modules
- * own their data independent of window/layout state). Stale moduleData
+ * Modules persist their own data keyed by module id. Stale moduleData
  * slices whose module is no longer registered are pruned on load (and
  * thus drop out of the blob on the next save), so the persistence shape
  * never accumulates keys for removed modules.
@@ -39,7 +38,7 @@ export function loadState() {
   }
 }
 
-/** Persist the full app state as the single JSON blob (Spec §9). */
+/** Persist the full app state as the single JSON blob. */
 export function saveState(state) {
   try {
     localStorage.setItem(STATE_KEY, JSON.stringify(state));

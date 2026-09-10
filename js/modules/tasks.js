@@ -1,13 +1,13 @@
 /*
  * pOS — js/modules/tasks.js
  * ----------------------------------------------------------------------
- * Tasks module — a checkbox to-do list (Spec §8, as amended).
+ * Tasks module — a checkbox to-do list.
  *
  * Registers itself with the module registry at import time; the WM core
  * only ever sees it through the registry. Each task carries a short
  * title, done flag, due date, priority (none/low/medium/high) and an
  * optional description; data persists as an array of those objects
- * under the module's own moduleData.tasks slice (Spec §9). Entries
+ * under the module's own moduleData.tasks slice. Entries
  * saved before the extra fields existed are normalized on load.
  */
 

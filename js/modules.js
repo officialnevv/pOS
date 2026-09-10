@@ -1,7 +1,7 @@
 /*
  * pOS — js/modules.js
  * ----------------------------------------------------------------------
- * Central module registry (Spec §8).
+ * Central module registry.
  *
  * The window manager core knows nothing about individual modules — it
  * only talks to this registry. Every module (a self-contained file
@@ -25,7 +25,7 @@
 const registry = new Map();
 
 /**
- * Register a module. Throws on duplicate ids (singleton guarantee, Spec §5).
+ * Register a module. Throws on duplicate ids (singleton guarantee).
  */
 export function registerModule(module) {
   if (!module || typeof module.id !== 'string' || !module.id) {

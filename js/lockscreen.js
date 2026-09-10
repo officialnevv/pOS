@@ -1,15 +1,15 @@
 /*
  * pOS — js/lockscreen.js
  * ----------------------------------------------------------------------
- * Lock screen overlay (Spec §12, as amended).
+ * Lock screen overlay.
  *
  * A minimal, purely client-side UI gate — a soft deterrent, not real
- * security (the PIN is hardcoded below by spec; localStorage data is
+ * security (the PIN is hardcoded below; localStorage data is
  * not encrypted or protected).
  *
  * Behaviour:
  *   - Full-screen, theme-aware overlay covering everything (shown on
- *     every page load via initLockScreen(), Spec §12).
+ *     every page load via initLockScreen()).
  *   - "pOS" is a display label, NOT an editable input.
  *   - PIN: 000000. Unlocks the moment the correct PIN is fully typed —
  *     no Enter needed. The overlay fades out via a CSS opacity
@@ -31,7 +31,7 @@ function buildOverlay() {
   const box = document.createElement('div');
   box.className = 'lock-box';
 
-  // display label — pre-filled and not editable (Spec §12)
+  // display label — pre-filled and not editable
   const title = document.createElement('div');
   title.className = 'lock-title';
   title.textContent = 'pOS';
@@ -93,7 +93,7 @@ function lockNow() {
   input.focus();
 }
 
-/** Lock automatically on every page load (Spec §12). */
+/** Lock automatically on every page load. */
 export function initLockScreen() {
   lockNow();
 }
