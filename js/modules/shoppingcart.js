@@ -3,8 +3,8 @@
  * ----------------------------------------------------------------------
  * Shopping Cart module — a manual shopping/tracking list (Spec §8).
  *
- * Closest to Bookmarks (manual-entry-only CRUD) plus Tasks-style
- * reordering: add an item with a name and a numeric price (validated
+ * Closest to Tasks-style reordering: add an item with a name and a
+ * numeric price (validated
  * inline), optionally a stored link (the name becomes a clickable link,
  * opened in a new tab) and a free-text site label. Quantity is adjusted
  * with a custom +/- stepper (Pomodoro/Goals pattern); purchased items
@@ -142,7 +142,7 @@ function mount(container, context) {
     const main = document.createElement('div');
     main.className = 'cart-main';
 
-    // name: a real link when a link is stored (Bookmarks convention),
+    // name: a real link when a link is stored,
     // plain text otherwise
     const nameEl = item.link
       ? document.createElement('a')

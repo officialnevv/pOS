@@ -243,7 +243,7 @@ function mount(container, context) {
   modeBtn.title = 'toggle preview';
   titleRow.append(titleInput, modeBtn);
   const bodyEl = document.createElement('textarea');
-  bodyEl.className = 'notes-body';
+  bodyEl.className = 'notes-editor-body';
   bodyEl.placeholder = 'write something…';
   const previewEl = document.createElement('div');
   previewEl.className = 'notes-preview';
@@ -257,7 +257,7 @@ function mount(container, context) {
 
   // sidebar + editor live in a row wrapper below the title
   const body = document.createElement('div');
-  body.className = 'notes-editor-body';
+  body.className = 'notes-body';
   body.append(sidebar, editor);
 
   container.append(title, body);

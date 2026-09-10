@@ -23,7 +23,7 @@ const SORT_DESC = '\uf161';  // nf-fa-sort-amount-desc (latest due first)
 const PRIORITIES = ['none', 'low', 'medium', 'high'];
 
 // Tolerate old/partial saved entries: missing fields default to no due
-// date, "none" priority, an empty description and no completion time.
+// date, "none" priority and an empty description.
 function normalize(list) {
   return (Array.isArray(list) ? list : []).map((it) => ({
     text: typeof it?.text === 'string' ? it.text : '',
@@ -31,7 +31,6 @@ function normalize(list) {
     dueDate: typeof it?.dueDate === 'string' ? it.dueDate : '',
     priority: PRIORITIES.includes(it?.priority) ? it.priority : 'none',
     description: typeof it?.description === 'string' ? it.description : '',
-    completedAt: typeof it?.completedAt === 'number' ? it.completedAt : null,
   }));
 }
 
@@ -169,8 +168,6 @@ function mount(container, context) {
     check.title = item.done ? 'mark uncomplete' : 'mark complete';
     check.addEventListener('click', () => {
       item.done = !item.done;
-      // completion timestamp feeds the Dashboard's completion-trend chart
-      item.completedAt = item.done ? Date.now() : null;
       persist();
       renderList();
     });

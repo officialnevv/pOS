@@ -17,9 +17,7 @@
  *
  * Persistence is deliberately partial (Spec §9): the live countdown
  * (phase, remaining time, running state) resets on page reload and is
- * never saved. Completed work sessions, however, log to
- * moduleData.pomodoro as { completedAt, durationMinutes } entries —
- * history for the Dashboard's session chart. The tick interval lives in
+ * never saved. The tick interval lives in
  * mount scope; unmount clears it so a closed window stops ticking.
  */
 
@@ -32,25 +30,14 @@ const MAX_MINUTES = 180;
 
 let teardown = null; // set by mount, called by unmount to stop the interval
 
-function mount(container, context) {
-  // live session state — resets on every mount/reload by design (only
-  // completed work sessions are logged to moduleData, see logSession)
+function mount(container) {
+  // live session state — resets on every mount/reload by design
   let workMin = 25;
   let breakMin = 5;
   let phase = 'work'; // 'work' | 'break'
   let remaining = workMin * 60; // seconds left in the current phase
   let running = false;
   let timerId = null;
-
-  // completed work sessions log to moduleData.pomodoro (feeding the
-  // Dashboard's session-history chart); the live countdown itself is
-  // still deliberately session-only
-  const logSession = (minutes) => {
-    const data = context.load() ?? {};
-    const sessionLog = Array.isArray(data.sessionLog) ? data.sessionLog : [];
-    sessionLog.push({ completedAt: Date.now(), durationMinutes: minutes });
-    context.persist({ sessionLog });
-  };
 
   // embedded title: icon + module name (Spec §2)
   const title = document.createElement('div');
@@ -225,7 +212,6 @@ function mount(container, context) {
   function tick() {
     remaining -= 1;
     if (remaining <= 0) {
-      if (phase === 'work') logSession(workMin); // work session completed
       phase = phase === 'work' ? 'break' : 'work';
       remaining = durationSec();
       flash();

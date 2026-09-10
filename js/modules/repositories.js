@@ -192,7 +192,7 @@ function mount(container, context) {
       head.appendChild(avatar);
     }
 
-    // a real anchor like Bookmarks: middle-click / ctrl-click / plain
+    // a real anchor: middle-click / ctrl-click / plain
     // click all open the repo in a new tab. Main title is the repo name
     // only; the owner stays visible as a small secondary label
     const titleWrap = document.createElement('div');
