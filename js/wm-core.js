@@ -24,7 +24,6 @@ import './modules/tasks.js';
 import './modules/notes.js';
 import './modules/pomodoro.js';
 import './modules/goals.js';
-import './modules/repositories.js';
 import './modules/shoppingcart.js';
 
 import { DEFAULT_THEME_ID, applyTheme, getAllThemes } from './themes.js';

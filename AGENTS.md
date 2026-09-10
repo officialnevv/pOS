@@ -154,14 +154,6 @@ lock screen. "Apps" are modules that render into WM windows.
     checkpoints) or a manual progress stepper when checkpoint-less.
     Hitting 100% auto-archives the goal (dimmed, hidden behind a
     show-archived toggle, manually un-archivable).
-  - **Repositories** — a personal library of GitHub repos. Adding a URL
-    parses owner/name and fetches description/stars/language/avatar once
-    from GitHub's public API (no auth, one call per explicit action —
-    the unauthenticated API is 60 req/hour). Failed fetches set
-    `fetchFailed` and render a retry state; each card has a manual
-    refresh. Cards show avatar, repo-name link, language, star count,
-    clamped description and an inline personal note; a live name search
-    (view state, resets on reload) filters the grid.
   - **Shopping Cart** — a manual shopping/tracking list. Name and
     numeric price are required (inline validation); optional link
     (name becomes the link) and site label; quantity stepper; purchased
@@ -172,7 +164,7 @@ lock screen. "Apps" are modules that render into WM windows.
   no confirmation dialogs on remove, caret-based manual reordering
   (array order IS the display order; when a display filter/sort is
   active, moves swap with the visible neighbour), view state (filters,
-  search, sort direction) is deliberately not persisted, and custom
+  sort direction) is deliberately not persisted, and custom
   checkboxes/steppers/inputs instead of native form elements.
 
 ## Persistence
@@ -189,8 +181,6 @@ lock screen. "Apps" are modules that render into WM windows.
   - `goals`: array of `{ id, title, description, category, targetDate,
     checkpoints: [{ id, label, done }], manualProgress, createdAt,
     archived }`
-  - `repositories`: array of `{ id, url, owner, name, description,
-    stars, language, avatarUrl, note, addedAt, fetchFailed }`
   - `shoppingCart`: array of `{ id, name, price, link, site, quantity,
     purchased, addedAt }`
 - Saved entries are normalized on load (missing/legacy fields get safe
@@ -233,6 +223,11 @@ untrue? If yes, fix the doc before finishing.
 
 ## Changelog
 
+- 2026-09-10 — Removed the Repositories module (file, registry import,
+  CSS section, data shape). All GitHub API interaction went with it;
+  no star-sync remnants existed in the current code. Stale
+  `moduleData.repositories` slices are pruned by the existing cleanup on
+  next load.
 - 2026-09-10 — Removed the Watch Later module (file, registry import,
   CSS section, data shape). Its YouTube oEmbed fetch went with it;
   nothing else used it. Stale `moduleData.watchLater` slices are pruned
