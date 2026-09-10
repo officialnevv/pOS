@@ -244,6 +244,46 @@ body {
   font-size: 14px;
 }
 
+/* shared add-row: the input + button pattern every module's
+   always-visible new-entry row uses */
+.module-add-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.module-add-row input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 4px 8px;
+  border-radius: 0;
+}
+
+.module-add-row input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.module-add-row button {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-accent);
+  font: inherit;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.module-add-row button:hover {
+  border-color: var(--color-accent);
+}
+
 /* ---------------------------------------------------------------
    8. Workspace indicator pill (Spec §3): floating, bottom-centered;
    slots 1-3 always, 4-9 only while populated; layout + theme icons.
@@ -514,44 +554,6 @@ body {
    Tasks module — checkbox to-do list (Spec §8). Data persists under
    moduleData.tasks (Spec §9).
    --------------------------------------------------------------- */
-.tasks-add {
-  display: flex;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.tasks-add input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-fg);
-  font: inherit;
-  padding: 4px 8px;
-  border-radius: 0;
-}
-
-.tasks-add input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.tasks-add button {
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-accent);
-  font: inherit;
-  font-weight: 700;
-  padding: 4px 10px;
-  cursor: pointer;
-  border-radius: 0;
-}
-
-.tasks-add button:hover {
-  border-color: var(--color-accent);
-}
-
 .tasks-list {
   flex: 1;
   min-height: 0;
@@ -1328,44 +1330,6 @@ body {
    oEmbed titles for YouTube only; persists under
    moduleData.watchLater as { url, title, watched } entries.
    --------------------------------------------------------------- */
-.watchlater-add {
-  display: flex;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.watchlater-add input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-fg);
-  font: inherit;
-  padding: 4px 8px;
-  border-radius: 0;
-}
-
-.watchlater-add input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.watchlater-add button {
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-accent);
-  font: inherit;
-  font-weight: 700;
-  padding: 4px 10px;
-  cursor: pointer;
-  border-radius: 0;
-}
-
-.watchlater-add button:hover {
-  border-color: var(--color-accent);
-}
-
 .watchlater-list {
   flex: 1;
   min-height: 0;
@@ -1490,44 +1454,6 @@ body {
    and derived or manual progress.
    Data persists under moduleData.goals (Spec §9).
    --------------------------------------------------------------- */
-
-.goals-add {
-  display: flex;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.goals-add input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-fg);
-  font: inherit;
-  padding: 4px 8px;
-  border-radius: 0;
-}
-
-.goals-add input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.goals-add button {
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-accent);
-  font: inherit;
-  font-weight: 700;
-  padding: 4px 10px;
-  cursor: pointer;
-  border-radius: 0;
-}
-
-.goals-add button:hover {
-  border-color: var(--color-accent);
-}
 
 /* archived show/hide toggle above the list */
 .goals-filter {
@@ -1982,44 +1908,6 @@ body {
    Data persists under moduleData.repositories (Spec §9).
    --------------------------------------------------------------- */
 
-.repos-add {
-  display: flex;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.repos-add input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-fg);
-  font: inherit;
-  padding: 4px 8px;
-  border-radius: 0;
-}
-
-.repos-add input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.repos-add button {
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-accent);
-  font: inherit;
-  font-weight: 700;
-  padding: 4px 10px;
-  cursor: pointer;
-  border-radius: 0;
-}
-
-.repos-add button:hover {
-  border-color: var(--color-accent);
-}
-
 /* inline validation error for non-github URLs (hidden while empty) */
 .repos-error {
   padding: 6px 12px;
@@ -2257,44 +2145,6 @@ body {
    purchased toggles and split remaining/purchased totals.
    Data persists under moduleData.shoppingCart (Spec §9).
    --------------------------------------------------------------- */
-
-.cart-add {
-  display: flex;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.cart-add input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-fg);
-  font: inherit;
-  padding: 4px 8px;
-  border-radius: 0;
-}
-
-.cart-add input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.cart-add button {
-  background: transparent;
-  border: 2px solid var(--color-border);
-  color: var(--color-accent);
-  font: inherit;
-  font-weight: 700;
-  padding: 4px 10px;
-  cursor: pointer;
-  border-radius: 0;
-}
-
-.cart-add button:hover {
-  border-color: var(--color-accent);
-}
 
 .cart-error {
   padding: 6px 12px;

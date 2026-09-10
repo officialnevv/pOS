@@ -20,7 +20,7 @@
  * on load.
  */
 
-import { registerModule } from '../modules.js';
+import { createModuleTitle, registerModule } from '../modules.js';
 
 const REPOS_ICON = '\uf09b';    // nf-fa-github
 const STAR_GLYPH = '\uf005';    // nf-fa-star
@@ -95,19 +95,11 @@ function mount(container, context) {
   // search query: view state, deliberately not persisted (resets on
   // reload)
 
-  // embedded title: icon + module name (Spec §2)
-  const title = document.createElement('div');
-  title.className = 'module-title';
-  const titleIcon = document.createElement('span');
-  titleIcon.className = 'module-title-icon';
-  titleIcon.textContent = REPOS_ICON;
-  const titleName = document.createElement('span');
-  titleName.textContent = 'Repositories';
-  title.append(titleIcon, titleName);
+  const title = createModuleTitle(REPOS_ICON, 'Repositories');
 
   // add row (always visible, Notes/Goals-style): paste a URL, Enter or '+'
   const addRow = document.createElement('div');
-  addRow.className = 'repos-add';
+  addRow.className = 'module-add-row';
   const urlInput = document.createElement('input');
   urlInput.type = 'text';
   urlInput.placeholder = 'https://github.com/owner/repo';

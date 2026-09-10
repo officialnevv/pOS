@@ -11,7 +11,7 @@
  * saved before the extra fields existed are normalized on load.
  */
 
-import { registerModule } from '../modules.js';
+import { createModuleTitle, registerModule } from '../modules.js';
 
 const TASKS_ICON = '\uf14a';  // Nerd Font check-square
 const CHECK_GLYPH = '\uf00c'; // Nerd Font check, drawn inside the checkbox
@@ -46,19 +46,11 @@ function mount(container, context) {
   let filter = 'all';
   let dueSort = 'off';
 
-  // embedded title: icon + module name (Spec §2)
-  const title = document.createElement('div');
-  title.className = 'module-title';
-  const titleIcon = document.createElement('span');
-  titleIcon.className = 'module-title-icon';
-  titleIcon.textContent = TASKS_ICON;
-  const titleName = document.createElement('span');
-  titleName.textContent = 'Tasks';
-  title.append(titleIcon, titleName);
+  const title = createModuleTitle(TASKS_ICON, 'Tasks');
 
   // add row
   const addRow = document.createElement('div');
-  addRow.className = 'tasks-add';
+  addRow.className = 'module-add-row';
   const input = document.createElement('input');
   input.type = 'text';
   input.placeholder = 'new task…';

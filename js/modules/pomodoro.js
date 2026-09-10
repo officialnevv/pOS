@@ -21,7 +21,7 @@
  * mount scope; unmount clears it so a closed window stops ticking.
  */
 
-import { registerModule } from '../modules.js';
+import { createModuleTitle, registerModule } from '../modules.js';
 
 const POMODORO_ICON = '\uf2f2'; // nf-fa-stopwatch
 
@@ -39,15 +39,7 @@ function mount(container) {
   let running = false;
   let timerId = null;
 
-  // embedded title: icon + module name (Spec §2)
-  const title = document.createElement('div');
-  title.className = 'module-title';
-  const titleIcon = document.createElement('span');
-  titleIcon.className = 'module-title-icon';
-  titleIcon.textContent = POMODORO_ICON;
-  const titleName = document.createElement('span');
-  titleName.textContent = 'Pomodoro';
-  title.append(titleIcon, titleName);
+  const title = createModuleTitle(POMODORO_ICON, 'Pomodoro');
 
   /* ---- progress ring (SVG) ---- */
   const SVG_NS = 'http://www.w3.org/2000/svg';

@@ -49,3 +49,16 @@ export function getAllModules() {
     a.name.localeCompare(b.name)
   );
 }
+
+/** Embedded title bar: Nerd Font icon + module name. */
+export function createModuleTitle(icon, name) {
+  const title = document.createElement('div');
+  title.className = 'module-title';
+  const iconEl = document.createElement('span');
+  iconEl.className = 'module-title-icon';
+  iconEl.textContent = icon;
+  const nameEl = document.createElement('span');
+  nameEl.textContent = name;
+  title.append(iconEl, nameEl);
+  return title;
+}

@@ -18,7 +18,7 @@
  * entries are normalized on load.
  */
 
-import { registerModule } from '../modules.js';
+import { createModuleTitle, registerModule } from '../modules.js';
 
 const WATCHLATER_ICON = '\uf26c'; // nf-fa-television (site-agnostic)
 const CHECK_GLYPH = '\uf00c';     // nf-fa-check, drawn inside the toggle
@@ -56,19 +56,11 @@ function mount(container, context) {
   let items = normalize(context.load());
   const persist = () => context.persist(items);
 
-  // embedded title: icon + module name (Spec §2)
-  const title = document.createElement('div');
-  title.className = 'module-title';
-  const titleIcon = document.createElement('span');
-  titleIcon.className = 'module-title-icon';
-  titleIcon.textContent = WATCHLATER_ICON;
-  const titleName = document.createElement('span');
-  titleName.textContent = 'Watch Later';
-  title.append(titleIcon, titleName);
+  const title = createModuleTitle(WATCHLATER_ICON, 'Watch Later');
 
   // add row: url + add button
   const addRow = document.createElement('div');
-  addRow.className = 'watchlater-add';
+  addRow.className = 'module-add-row';
   const urlInput = document.createElement('input');
   urlInput.type = 'text';
   urlInput.placeholder = 'https://… (video link)';

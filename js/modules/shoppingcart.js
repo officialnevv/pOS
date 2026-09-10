@@ -20,7 +20,7 @@
  * existed are normalized on load.
  */
 
-import { registerModule } from '../modules.js';
+import { createModuleTitle, registerModule } from '../modules.js';
 
 const CART_ICON = '\uf07a';   // nf-fa-shopping-cart
 const CHECK_GLYPH = '\uf00c'; // Nerd Font check, drawn inside the checkbox
@@ -54,19 +54,11 @@ function mount(container, context) {
   let items = normalize(context.load());
   const persist = () => context.persist(items);
 
-  // embedded title: icon + module name (Spec §2)
-  const title = document.createElement('div');
-  title.className = 'module-title';
-  const titleIcon = document.createElement('span');
-  titleIcon.className = 'module-title-icon';
-  titleIcon.textContent = CART_ICON;
-  const titleName = document.createElement('span');
-  titleName.textContent = 'Shopping Cart';
-  title.append(titleIcon, titleName);
+  const title = createModuleTitle(CART_ICON, 'Shopping Cart');
 
   // add row (always visible): name + price required, link/site optional
   const addRow = document.createElement('div');
-  addRow.className = 'cart-add';
+  addRow.className = 'module-add-row';
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.placeholder = 'item name…';

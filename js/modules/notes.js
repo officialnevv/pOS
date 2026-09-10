@@ -14,7 +14,7 @@
  * markdown source — rendering is display-only.
  */
 
-import { registerModule } from '../modules.js';
+import { createModuleTitle, registerModule } from '../modules.js';
 
 const NOTES_ICON = '\uf249'; // Nerd Font sticky-note
 
@@ -195,15 +195,7 @@ function mount(container, context) {
   // true = rendered markdown preview (display-only, never persisted)
   let preview = false;
 
-  // embedded title: icon + module name (Spec §2)
-  const title = document.createElement('div');
-  title.className = 'module-title';
-  const titleIcon = document.createElement('span');
-  titleIcon.className = 'module-title-icon';
-  titleIcon.textContent = NOTES_ICON;
-  const titleName = document.createElement('span');
-  titleName.textContent = 'Notes';
-  title.append(titleIcon, titleName);
+  const title = createModuleTitle(NOTES_ICON, 'Notes');
 
   // sidebar: always-visible new-note row (title input + add button) on
   // top of the note list; the resize handle is anchored inside the

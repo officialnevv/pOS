@@ -16,7 +16,7 @@
  * Entries saved before the extra fields existed are normalized on load.
  */
 
-import { registerModule } from '../modules.js';
+import { createModuleTitle, registerModule } from '../modules.js';
 
 const GOALS_ICON = '\uf140';  // nf-fa-bullseye
 const CHECK_GLYPH = '\uf00c'; // Nerd Font check, drawn inside the checkbox
@@ -82,19 +82,11 @@ function mount(container, context) {
   let expanded = null;
   let showArchived = false;
 
-  // embedded title: icon + module name (Spec §2)
-  const title = document.createElement('div');
-  title.className = 'module-title';
-  const titleIcon = document.createElement('span');
-  titleIcon.className = 'module-title-icon';
-  titleIcon.textContent = GOALS_ICON;
-  const titleName = document.createElement('span');
-  titleName.textContent = 'Goals';
-  title.append(titleIcon, titleName);
+  const title = createModuleTitle(GOALS_ICON, 'Goals');
 
   // add row (always visible, Notes-style): type a title, Enter or '+'
   const addRow = document.createElement('div');
-  addRow.className = 'goals-add';
+  addRow.className = 'module-add-row';
   const input = document.createElement('input');
   input.type = 'text';
   input.placeholder = 'new goal…';
