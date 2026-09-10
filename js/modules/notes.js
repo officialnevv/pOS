@@ -257,7 +257,7 @@ function mount(container, context) {
 
   // sidebar + editor live in a row wrapper below the title
   const body = document.createElement('div');
-  body.className = 'notes-body';
+  body.className = 'notes-editor-body';
   body.append(sidebar, editor);
 
   container.append(title, body);

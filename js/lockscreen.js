@@ -16,10 +16,6 @@
  *     transition instead of vanishing instantly.
  *   - Wrong PIN -> brief error text + shake animation + input cleared;
  *     no lockout, no limiting. Enter still works as a redundant submit.
- *
- * NOTE: lockNow() is exported but intentionally unbound (the spec's
- * manual-lock trigger is optional). Wire it to any spare key later
- * (e.g. Alt+Shift+P) or a small top-bar icon if wanted.
  */
 
 const LOCK_PIN = '000000';
@@ -88,7 +84,7 @@ function unlock() {
 }
 
 /** Show the lock overlay (idempotent). */
-export function lockNow() {
+function lockNow() {
   if (lockOverlay) return;
   const { overlay, input } = buildOverlay();
   document.body.appendChild(overlay);

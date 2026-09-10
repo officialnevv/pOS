@@ -6,7 +6,7 @@ I built it mostly because I wanted to. It's how I like to organize scratch stuff
 
 ## What it is
 
-Under the hood it's a generic window manager shell: 9 workspaces, dwindle (BSP) tiling, floating windows, fullscreen overlays, a module launcher, theming, and a lock screen. The WM core knows nothing about individual apps, modules register themselves with a central registry, and the registry is intentionally empty right now. When I want a new "app," I drop a file in `js/modules/`, call `registerModule()`, add one import, and it shows up in the launcher.
+Under the hood it's a generic window manager shell: 9 workspaces, dwindle (BSP) tiling, floating windows, fullscreen overlays, a module launcher, theming, and a lock screen. The WM core knows nothing about individual apps, modules register themselves with a central registry, and dropping a new module in is three lines of glue (see AGENT.md). The shipped modules are a Dashboard (auto-opens on workspace 1), Tasks, Notes, Pomodoro, Weather, Bookmarks, Watch Later, Goals, Repositories, and a Shopping Cart.
 
 ## Tech
 
